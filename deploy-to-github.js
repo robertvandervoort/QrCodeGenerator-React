@@ -8,6 +8,10 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// GitHub repository information
+const GITHUB_USERNAME = 'rvandervoort'; // Update this with your actual GitHub username
+const REPO_NAME = 'qr-code-generator'; // Update this with your repository name
+
 // Run build
 console.log('Building the project...');
 exec('npm run build', (error, stdout, stderr) => {
@@ -18,11 +22,16 @@ exec('npm run build', (error, stdout, stderr) => {
   
   console.log('Build completed successfully.');
   
-  // Create a CNAME file if needed
-  // fs.writeFileSync('./dist/CNAME', 'yourdomain.com');
-  
   // Create a .nojekyll file to disable Jekyll processing
   fs.writeFileSync('./dist/.nojekyll', '');
+  
+  // Copy our custom GitHub Pages index to the dist folder
+  try {
+    fs.copyFileSync('./github-pages-index.html', './dist/index.html');
+    console.log('GitHub Pages index.html copied to dist folder.');
+  } catch (err) {
+    console.warn('Could not copy GitHub Pages index.html:', err);
+  }
   
   // Copy README.md to the dist folder
   try {
@@ -47,6 +56,6 @@ exec('npm run build', (error, stdout, stderr) => {
       return;
     }
     console.log('Deployment successful!');
-    console.log('Your app is now available at: https://rvandervoort.github.io/qr-code-generator');
+    console.log(`Your app is now available at: https://${GITHUB_USERNAME}.github.io/${REPO_NAME}`);
   });
 });
