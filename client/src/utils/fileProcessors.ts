@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 
 interface ProcessResult {
-  data: any[][];
+  data: Record<string, any>[];  // Changed from any[][] to Record<string, any>[]
   sheets: string[];
   columns: string[];
   currentSheet?: string;  // The currently selected/processed sheet
@@ -36,7 +36,8 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
         
         console.log(`Processing Excel sheet: ${selectedSheet}`);
         
-        // Convert sheet to JSON
+        // Convert sheet to JSON with headers
+        // First get the raw data with numeric arrays
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
         
         // Extract column names (assuming first row contains headers)
@@ -51,10 +52,21 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
         // Filter out empty rows (rows with all undefined or empty values)
         const validRows = jsonData.slice(1).filter(isValidRow);
         
+        // Now convert to objects with column headers as keys
+        const objectRows = validRows.map((row: any[]) => {
+          const obj: Record<string, any> = {};
+          columns.forEach((col, i) => {
+            if (col) { // Only use non-empty column names
+              obj[col] = row[i];
+            }
+          });
+          return obj;
+        });
+        
         console.log(`Excel processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows in sheet '${selectedSheet}'`);
         
         resolve({
-          data: validRows as any[][],  // Skip header row and include only valid rows
+          data: objectRows,  // Return objects with column headers as keys
           sheets,
           columns,
           currentSheet: selectedSheet
@@ -100,10 +112,21 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
         // Filter out empty rows (rows with all undefined or empty values)
         const validRows = jsonData.slice(1).filter(isValidRow);
         
+        // Now convert to objects with column headers as keys
+        const objectRows = validRows.map((row: any[]) => {
+          const obj: Record<string, any> = {};
+          columns.forEach((col, i) => {
+            if (col) { // Only use non-empty column names
+              obj[col] = row[i];
+            }
+          });
+          return obj;
+        });
+        
         console.log(`CSV processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
         
         resolve({
-          data: validRows as any[][],  // Skip header row and include only valid rows
+          data: objectRows,  // Return objects with column headers as keys
           sheets: ['Sheet1'],  // CSV only has one sheet
           columns,
           currentSheet: 'Sheet1'
