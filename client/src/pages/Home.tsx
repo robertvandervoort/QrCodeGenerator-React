@@ -118,9 +118,9 @@ const Home = () => {
             onValueChange={setActiveTab}
             className="w-full mb-6"
           >
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
-              <TabsTrigger value="quick">Quick QR Code</TabsTrigger>
-              <TabsTrigger value="batch">Batch Processing</TabsTrigger>
+            <TabsList className="grid w-full max-w-lg mx-auto grid-cols-2 mb-6 border border-gray-200 rounded-lg shadow-sm">
+              <TabsTrigger value="quick" className="text-base py-3 px-6 font-semibold">Quick QR Code</TabsTrigger>
+              <TabsTrigger value="batch" className="text-base py-3 px-6 font-semibold">Batch Processing</TabsTrigger>
             </TabsList>
             
             <TabsContent value="quick">
