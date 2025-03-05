@@ -138,6 +138,7 @@ const Home = () => {
                 nextStep={nextStep}
                 prevStep={prevStep}
                 logDebug={logDebug}
+                debugMode={debugMode}
               />
             )}
             

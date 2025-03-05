@@ -27,6 +27,7 @@ interface ConfigureProps {
   nextStep: () => void;
   prevStep: () => void;
   logDebug: (type: DebugLog['type'], message: string) => void;
+  debugMode: boolean;
 }
 
 const Configure = ({
@@ -46,7 +47,8 @@ const Configure = ({
   setQrOptions,
   nextStep,
   prevStep,
-  logDebug
+  logDebug,
+  debugMode
 }: ConfigureProps) => {
   
   // Auto-detect URL column on component mount
@@ -267,18 +269,23 @@ const Configure = ({
           {/* Data Preview */}
           {previewData.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                Data Preview <span className="text-gray-500 font-normal">(showing first 5 rows of {previewData.length})</span>
+              <h3 className="text-sm font-medium text-gray-700 mb-2 flex justify-between items-center">
+                <span>
+                  Data Preview <span className="text-gray-500 font-normal">
+                    {debugMode ? `(showing all ${previewData.length} rows)` : `(showing first 5 rows of ${previewData.length})`}
+                  </span>
+                </span>
+                <span className="text-xs text-primary">All {previewData.length} rows will be processed</span>
               </h3>
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
-                <div className="max-h-48 overflow-y-auto">
+                <div className={`${debugMode ? 'max-h-96' : 'max-h-48'} overflow-y-auto`}>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
                         {Object.keys(previewData[0] || {}).map((key) => (
                           <th 
                             key={key}
-                            className="px-3 py-2 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-3 py-2 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0"
                           >
                             {key}
                           </th>
@@ -286,7 +293,7 @@ const Configure = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {previewData.slice(0, 5).map((row, rowIndex) => (
+                      {(debugMode ? previewData : previewData.slice(0, 5)).map((row, rowIndex) => (
                         <tr key={rowIndex}>
                           {Object.values(row).map((cell, cellIndex) => (
                             <td 
@@ -302,8 +309,12 @@ const Configure = ({
                   </table>
                 </div>
                 <div className="mt-2 text-xs text-gray-500 flex justify-between">
-                  <span>Showing 5 of {previewData.length} rows</span>
-                  <span className="text-primary">All {previewData.length} rows will be processed for QR code generation</span>
+                  <span>
+                    {debugMode 
+                      ? `Showing all ${previewData.length} rows in debug mode`
+                      : `Showing 5 of ${previewData.length} rows (enable debug mode to see all)`
+                    }
+                  </span>
                 </div>
               </div>
             </div>
