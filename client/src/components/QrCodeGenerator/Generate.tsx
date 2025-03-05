@@ -99,8 +99,10 @@ const Generate = ({
           continue;
         }
         
+        // Create filename from selected columns 
+        // If row[col] exists, use its value, otherwise use empty string (NOT the column name)
         const filename = selectedFilenameColumns
-          .map(col => row[col] || col)
+          .map(col => row[col] !== undefined ? row[col] : '')
           .join(separator) + '.' + qrOptions.format;
         
         try {
