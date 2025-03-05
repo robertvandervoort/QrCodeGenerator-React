@@ -15,6 +15,7 @@ export type FileData = {
   data: any[][];
   sheets: string[];
   columns: string[];
+  currentSheet?: string;
 };
 
 export type QrCodeOptions = {

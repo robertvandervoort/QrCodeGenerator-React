@@ -72,7 +72,8 @@ const FileUpload = ({
         size: file.size,
         data: result.data,
         sheets: result.sheets,
-        columns: result.columns
+        columns: result.columns,
+        currentSheet: result.currentSheet
       });
       
       // Auto-select first sheet for Excel files

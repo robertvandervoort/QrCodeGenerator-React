@@ -4,6 +4,7 @@ interface ProcessResult {
   data: any[][];
   sheets: string[];
   columns: string[];
+  currentSheet?: string;  // The currently selected/processed sheet
 }
 
 // Helper to check if a value is an array with at least one non-empty value
@@ -12,7 +13,7 @@ function isValidRow(row: any): boolean {
   return row.some(cell => cell !== undefined && cell !== null && cell !== '');
 }
 
-export const processExcelFile = (file: File): Promise<ProcessResult> => {
+export const processExcelFile = (file: File, sheetName?: string): Promise<ProcessResult> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -29,8 +30,11 @@ export const processExcelFile = (file: File): Promise<ProcessResult> => {
           return;
         }
         
-        // Get the first sheet by default
-        const worksheet = workbook.Sheets[sheets[0]];
+        // Get the requested sheet or the first sheet by default
+        const selectedSheet = sheetName && sheets.includes(sheetName) ? sheetName : sheets[0];
+        const worksheet = workbook.Sheets[selectedSheet];
+        
+        console.log(`Processing Excel sheet: ${selectedSheet}`);
         
         // Convert sheet to JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
@@ -40,19 +44,20 @@ export const processExcelFile = (file: File): Promise<ProcessResult> => {
         
         // Check if there's data
         if (jsonData.length <= 1) {
-          reject(new Error('No data found in Excel file'));
+          reject(new Error(`No data found in Excel sheet: ${selectedSheet}`));
           return;
         }
         
         // Filter out empty rows (rows with all undefined or empty values)
         const validRows = jsonData.slice(1).filter(isValidRow);
         
-        console.log(`Excel processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
+        console.log(`Excel processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows in sheet '${selectedSheet}'`);
         
         resolve({
           data: validRows as any[][],  // Skip header row and include only valid rows
           sheets,
-          columns
+          columns,
+          currentSheet: selectedSheet
         });
       } catch (error) {
         console.error('Error processing Excel file:', error);
@@ -100,7 +105,8 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
         resolve({
           data: validRows as any[][],  // Skip header row and include only valid rows
           sheets: ['Sheet1'],  // CSV only has one sheet
-          columns
+          columns,
+          currentSheet: 'Sheet1'
         });
       } catch (error) {
         console.error('Error processing CSV file:', error);
