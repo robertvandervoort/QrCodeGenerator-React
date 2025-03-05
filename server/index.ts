@@ -3,6 +3,11 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
+// Check for required environment variables
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.error('SESSION_SECRET environment variable is required in production');
+  // Don't throw an error as it would crash the server - instead, log the error
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
