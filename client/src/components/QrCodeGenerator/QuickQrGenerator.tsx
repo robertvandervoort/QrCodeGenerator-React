@@ -16,7 +16,7 @@ interface QuickQrGeneratorProps {
 const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
   const { toast } = useToast();
   const [url, setUrl] = useState("");
-  const [size, setSize] = useState(250);
+  const [size, setSize] = useState(900); // Default for print applications
   const [generatedQrCode, setGeneratedQrCode] = useState<string | null>(null);
 
   const qrOptions: QrCodeOptions = {
@@ -102,15 +102,30 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="size">Size: {size}px</Label>
-            <Slider
-              id="size"
-              min={100}
-              max={500}
-              step={10}
-              value={[size]}
-              onValueChange={handleSizeChange}
-            />
+            <Label htmlFor="size">Size (pixels)</Label>
+            <div className="flex gap-4 items-center">
+              <div className="flex-grow">
+                <Slider
+                  id="size-slider"
+                  min={100}
+                  max={1000}
+                  step={10}
+                  value={[size]}
+                  onValueChange={handleSizeChange}
+                />
+              </div>
+              <div className="w-24">
+                <Input
+                  id="size-input"
+                  type="number"
+                  min={100}
+                  max={2000}
+                  value={size}
+                  onChange={(e) => setSize(parseInt(e.target.value) || 250)}
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
           <div className="pt-2">
             <Button 

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { CheckCircle } from "lucide-react";
 import { detectUrlColumns } from "@/utils/fileProcessors";
 
@@ -223,17 +224,31 @@ const Configure = ({
             <h3 className="text-sm font-medium text-gray-700 mb-3">QR Code Options</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+              <div className="md:col-span-3">
                 <Label htmlFor="qr-size" className="block text-sm font-medium text-gray-700 mb-1">Size (pixels)</Label>
-                <Input
-                  id="qr-size"
-                  type="number"
-                  min="100"
-                  max="1000"
-                  step="10"
-                  value={qrOptions.size}
-                  onChange={(e) => handleQrOptionChange('size', parseInt(e.target.value))}
-                />
+                <div className="flex gap-4 items-center">
+                  <div className="flex-grow">
+                    <Slider
+                      id="qr-size-slider"
+                      min={100}
+                      max={1000}
+                      step={10}
+                      value={[qrOptions.size]}
+                      onValueChange={(value) => handleQrOptionChange('size', value[0])}
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Input
+                      id="qr-size"
+                      type="number"
+                      min="100"
+                      max="2000"
+                      value={qrOptions.size}
+                      onChange={(e) => handleQrOptionChange('size', parseInt(e.target.value) || 900)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
               </div>
               
               <div>

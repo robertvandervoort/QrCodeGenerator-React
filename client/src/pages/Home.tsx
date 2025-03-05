@@ -53,7 +53,7 @@ const Home = () => {
   const [separatorType, setSeparatorType] = useState<string>("_");
   const [customSeparator, setCustomSeparator] = useState<string>("");
   const [qrOptions, setQrOptions] = useState<QrCodeOptions>({
-    size: 250,
+    size: 900, // Default size for print applications
     margin: 4,
     format: "png",
     includeText: true
