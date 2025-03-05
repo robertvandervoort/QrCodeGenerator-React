@@ -6,6 +6,12 @@ interface ProcessResult {
   columns: string[];
 }
 
+// Helper to check if a value is an array with at least one non-empty value
+function isValidRow(row: any): boolean {
+  if (!Array.isArray(row)) return false;
+  return row.some(cell => cell !== undefined && cell !== null && cell !== '');
+}
+
 export const processExcelFile = (file: File): Promise<ProcessResult> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,8 +44,13 @@ export const processExcelFile = (file: File): Promise<ProcessResult> => {
           return;
         }
         
+        // Filter out empty rows (rows with all undefined or empty values)
+        const validRows = jsonData.slice(1).filter(isValidRow);
+        
+        console.log(`Excel processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
+        
         resolve({
-          data: jsonData.slice(1) as any[][],  // Skip header row
+          data: validRows as any[][],  // Skip header row and include only valid rows
           sheets,
           columns
         });
@@ -81,8 +92,18 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
           return;
         }
         
+        // Filter out empty rows (rows with all undefined or empty values)
+        const validRows = jsonData.slice(1).filter((row) => {
+          // Ensure it's actually an array
+          if (!Array.isArray(row)) return false;
+          // Check if any cell has a value
+          return row.some(cell => cell !== undefined && cell !== null && cell !== '');
+        });
+        
+        console.log(`CSV processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
+        
         resolve({
-          data: jsonData.slice(1) as any[][],  // Skip header row
+          data: validRows as any[][],  // Skip header row and include only valid rows
           sheets: ['Sheet1'],  // CSV only has one sheet
           columns
         });
