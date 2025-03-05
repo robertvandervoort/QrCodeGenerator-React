@@ -192,8 +192,11 @@ const Generate = ({
     
     // Generate and download zip
     zip.generateAsync({ type: "blob" }).then((content) => {
-      saveAs(content, "qr-codes.zip");
-      logDebug('download', `Downloaded ZIP file with ${generatedQrCodes.length} QR codes`);
+      const zipFilename = currentSheet 
+        ? `qr-codes-${currentSheet.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.zip` 
+        : "qr-codes.zip";
+      saveAs(content, zipFilename);
+      logDebug('download', `Downloaded ZIP file (${zipFilename}) with ${generatedQrCodes.length} QR codes`);
     });
   };
 

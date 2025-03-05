@@ -161,6 +161,7 @@ const Home = () => {
                 prevStep={prevStep}
                 resetApplication={resetApplication}
                 logDebug={logDebug}
+                currentSheet={fileData?.currentSheet}
               />
             )}
           </Card>
