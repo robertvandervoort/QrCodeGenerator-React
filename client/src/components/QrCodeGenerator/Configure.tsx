@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle } from "lucide-react";
+import { detectUrlColumns } from "@/utils/fileProcessors";
 
 interface ConfigureProps {
   fileData: FileData | null;
@@ -54,12 +55,11 @@ const Configure = ({
   // Auto-detect URL column on component mount
   useEffect(() => {
     if (fileData && fileData.columns.length > 0 && selectedUrlColumn === '') {
-      const possibleUrlColumns = ['url', 'link', 'website', 'webpage', 'web'];
-      const foundUrlColumn = fileData.columns.find(column => 
-        possibleUrlColumns.includes(column.toLowerCase())
-      );
+      // Use our enhanced URL column detection function
+      const possibleUrlColumns = detectUrlColumns(fileData.columns);
       
-      if (foundUrlColumn) {
+      if (possibleUrlColumns.length > 0) {
+        const foundUrlColumn = possibleUrlColumns[0]; // Use the first detected URL column
         setSelectedUrlColumn(foundUrlColumn);
         logDebug('url', `Auto-detected URL column: ${foundUrlColumn}`);
       }
@@ -115,6 +115,7 @@ const Configure = ({
           {/* URL Column Selection */}
           <div>
             <Label className="block text-sm font-medium text-gray-700 mb-1">URL Column</Label>
+            <p className="text-xs text-gray-500 mb-2">Select the column containing URL data (columns marked with 🔗 are detected as potential URL columns)</p>
             <Select
               value={selectedUrlColumn}
               onValueChange={(value) => {
@@ -126,9 +127,15 @@ const Configure = ({
                 <SelectValue placeholder="Select URL column" />
               </SelectTrigger>
               <SelectContent>
-                {fileData?.columns.map((column) => (
-                  <SelectItem key={column} value={column}>{column}</SelectItem>
-                ))}
+                {fileData?.columns.map((column) => {
+                  // Check if this column might be a URL column
+                  const isPossibleUrlColumn = detectUrlColumns([column]).length > 0;
+                  return (
+                    <SelectItem key={column} value={column} className={isPossibleUrlColumn ? "font-medium text-primary" : ""}>
+                      {column} {isPossibleUrlColumn && "🔗"}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             {selectedUrlColumn && (

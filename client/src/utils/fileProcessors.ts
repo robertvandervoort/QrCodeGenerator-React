@@ -93,12 +93,7 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
         }
         
         // Filter out empty rows (rows with all undefined or empty values)
-        const validRows = jsonData.slice(1).filter((row) => {
-          // Ensure it's actually an array
-          if (!Array.isArray(row)) return false;
-          // Check if any cell has a value
-          return row.some(cell => cell !== undefined && cell !== null && cell !== '');
-        });
+        const validRows = jsonData.slice(1).filter(isValidRow);
         
         console.log(`CSV processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
         
@@ -123,9 +118,21 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
 
 // Helper function to detect URL columns
 export const detectUrlColumns = (columns: string[]): string[] => {
-  const possibleUrlColumns = ['url', 'link', 'website', 'webpage', 'web', 'href'];
+  // Common terms that might indicate URL columns
+  const possibleUrlKeywords = ['url', 'link', 'website', 'webpage', 'web', 'href', 'http', 'https', 'www'];
   
-  return columns.filter(column => 
-    possibleUrlColumns.includes(column.toLowerCase())
+  // First check for exact matches
+  const exactMatches = columns.filter(column => 
+    possibleUrlKeywords.includes(column.toLowerCase())
   );
+  
+  if (exactMatches.length > 0) {
+    return exactMatches;
+  }
+  
+  // If no exact matches, look for partial matches
+  return columns.filter(column => {
+    const lowerColumn = column.toLowerCase();
+    return possibleUrlKeywords.some(keyword => lowerColumn.includes(keyword));
+  });
 };
