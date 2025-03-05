@@ -1,33 +1,36 @@
-import * as XLSX from 'xlsx';
+import * as ExcelJS from 'exceljs';
 
 interface ProcessResult {
-  data: Record<string, any>[];  // Changed from any[][] to Record<string, any>[]
+  data: Record<string, any>[];
   sheets: string[];
   columns: string[];
-  currentSheet?: string;  // The currently selected/processed sheet
+  currentSheet?: string;
 }
 
-// Helper to check if a value is an array with at least one non-empty value
-function isValidRow(row: unknown): boolean {
-  if (!Array.isArray(row)) return false;
-  return (row as any[]).some(cell => cell !== undefined && cell !== null && cell !== '');
+// Helper to check if a row has at least one non-empty value
+function isValidRow(rowValues: any[]): boolean {
+  return rowValues.some(value => value !== undefined && value !== null && value !== '');
 }
 
 export const processExcelFile = (file: File, sheetName?: string): Promise<ProcessResult> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e: ProgressEvent<FileReader>) => {
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
       try {
         const data = e.target?.result;
         if (!data) {
           reject(new Error('Failed to read file data'));
           return;
         }
-        const workbook = XLSX.read(data, {type: 'binary'} as XLSX.ParsingOptions);
+        
+        const workbook = new ExcelJS.Workbook();
+        const buffer = data instanceof ArrayBuffer ? data : new Uint8Array(data as ArrayBuffer).buffer;
+        
+        await workbook.xlsx.load(buffer);
         
         // Get all sheet names
-        const sheets = workbook.SheetNames;
+        const sheets = workbook.worksheets.map(worksheet => worksheet.name);
         
         if (sheets.length === 0) {
           reject(new Error('No sheets found in Excel file'));
@@ -35,46 +38,64 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
         }
         
         // Get the requested sheet or the first sheet by default
-        const selectedSheet = sheetName && sheets.includes(sheetName) ? sheetName : sheets[0];
-        const worksheet = workbook.Sheets[selectedSheet];
+        const selectedSheetName = sheetName && sheets.includes(sheetName) ? sheetName : sheets[0];
+        const worksheet = workbook.getWorksheet(selectedSheetName);
         
-        console.log(`Processing Excel sheet: ${selectedSheet}`);
-        
-        // Convert sheet to JSON with headers
-        // First get the raw data with numeric arrays
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-        
-        // Extract column names (assuming first row contains headers)
-        const columns = jsonData[0] as string[];
-        
-        // Check if there's data
-        if (jsonData.length <= 1) {
-          reject(new Error(`No data found in Excel sheet: ${selectedSheet}`));
+        if (!worksheet) {
+          reject(new Error(`Sheet '${selectedSheetName}' not found`));
           return;
         }
         
-        // Filter out empty rows (rows with all undefined or empty values)
-        const validRows = jsonData.slice(1).filter(isValidRow);
+        console.log(`Processing Excel sheet: ${selectedSheetName}`);
         
-        // Now convert to objects with column headers as keys
-        const objectRows = validRows.map((row) => {
-          const typedRow = row as any[];
-          const obj: Record<string, any> = {};
-          columns.forEach((col, i) => {
-            if (col) { // Only use non-empty column names
-              obj[col] = typedRow[i];
-            }
-          });
-          return obj;
+        // Extract column names (from first row)
+        const columns: string[] = [];
+        const firstRow = worksheet.getRow(1);
+        firstRow.eachCell((cell, colNumber) => {
+          // Note: Excel column numbers are 1-based
+          columns[colNumber - 1] = cell.value ? cell.value.toString() : '';
         });
         
-        console.log(`Excel processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows in sheet '${selectedSheet}'`);
+        // Check if there's data
+        if (worksheet.rowCount <= 1) {
+          reject(new Error(`No data found in Excel sheet: ${selectedSheetName}`));
+          return;
+        }
+        
+        // Process data rows
+        const objectRows: Record<string, any>[] = [];
+        
+        // Start from row 2 (skip headers)
+        for (let i = 2; i <= worksheet.rowCount; i++) {
+          const row = worksheet.getRow(i);
+          const rowValues: any[] = [];
+          
+          // Get all cell values for the row
+          row.eachCell((cell, colNumber) => {
+            rowValues[colNumber - 1] = cell.value;
+          });
+          
+          // Skip empty rows
+          if (!isValidRow(rowValues)) continue;
+          
+          // Create an object with column headers as keys
+          const rowObject: Record<string, any> = {};
+          columns.forEach((col, index) => {
+            if (col) { // Only use non-empty column names
+              rowObject[col] = rowValues[index];
+            }
+          });
+          
+          objectRows.push(rowObject);
+        }
+        
+        console.log(`Excel processing: Found ${objectRows.length} valid rows out of ${worksheet.rowCount - 1} total rows in sheet '${selectedSheetName}'`);
         
         resolve({
-          data: objectRows,  // Return objects with column headers as keys
+          data: objectRows,
           sheets,
           columns,
-          currentSheet: selectedSheet
+          currentSheet: selectedSheetName
         });
       } catch (error) {
         console.error('Error processing Excel file:', error);
@@ -86,7 +107,7 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
       reject(new Error('Error reading file'));
     };
     
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   });
 };
 
@@ -94,7 +115,7 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e: ProgressEvent<FileReader>) => {
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
       try {
         const data = e.target?.result;
         if (!data) {
@@ -102,42 +123,64 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
           return;
         }
         
-        // Use XLSX to parse CSV
-        const workbook = XLSX.read(data as string, {type: 'string'} as XLSX.ParsingOptions);
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
+        const csvString = data as string;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Sheet1');
         
-        // Convert to JSON with headers
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+        // Parse CSV
+        const rows = csvString.split('\n');
+        
+        // Process header row
+        const headerRow = rows[0].split(',').map(header => header.trim());
+        worksheet.addRow(headerRow);
+        
+        // Process data rows
+        for (let i = 1; i < rows.length; i++) {
+          if (rows[i].trim() === '') continue;
+          const rowValues = rows[i].split(',').map(value => value.trim());
+          worksheet.addRow(rowValues);
+        }
         
         // Extract column names
-        const columns = jsonData[0] as string[];
+        const columns = headerRow;
         
-        if (jsonData.length <= 1) {
+        if (rows.length <= 1) {
           reject(new Error('No data found in CSV file'));
           return;
         }
         
-        // Filter out empty rows (rows with all undefined or empty values)
-        const validRows = jsonData.slice(1).filter(isValidRow);
+        // Process data rows
+        const objectRows: Record<string, any>[] = [];
         
-        // Now convert to objects with column headers as keys
-        const objectRows = validRows.map((row) => {
-          const typedRow = row as any[];
-          const obj: Record<string, any> = {};
-          columns.forEach((col, i) => {
+        // Start from row 2 (skip headers)
+        for (let i = 2; i <= worksheet.rowCount; i++) {
+          const row = worksheet.getRow(i);
+          const rowValues: any[] = [];
+          
+          // Get all cell values for the row
+          row.eachCell((cell, colNumber) => {
+            rowValues[colNumber - 1] = cell.value;
+          });
+          
+          // Skip empty rows
+          if (!isValidRow(rowValues)) continue;
+          
+          // Create an object with column headers as keys
+          const rowObject: Record<string, any> = {};
+          columns.forEach((col, index) => {
             if (col) { // Only use non-empty column names
-              obj[col] = typedRow[i];
+              rowObject[col] = rowValues[index];
             }
           });
-          return obj;
-        });
+          
+          objectRows.push(rowObject);
+        }
         
-        console.log(`CSV processing: Found ${validRows.length} valid rows out of ${jsonData.length - 1} total rows`);
+        console.log(`CSV processing: Found ${objectRows.length} valid rows out of ${rows.length - 1} total rows`);
         
         resolve({
-          data: objectRows,  // Return objects with column headers as keys
-          sheets: ['Sheet1'],  // CSV only has one sheet
+          data: objectRows,
+          sheets: ['Sheet1'],
           columns,
           currentSheet: 'Sheet1'
         });
