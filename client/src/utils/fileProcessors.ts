@@ -72,7 +72,12 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
           
           // Get all cell values for the row
           row.eachCell((cell, colNumber) => {
-            rowValues[colNumber - 1] = cell.value;
+            // Handle formula results properly
+            if (cell.type === ExcelJS.ValueType.Formula) {
+              rowValues[colNumber - 1] = cell.result;
+            } else {
+              rowValues[colNumber - 1] = cell.value;
+            }
           });
           
           // Skip empty rows
@@ -159,7 +164,12 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
           
           // Get all cell values for the row
           row.eachCell((cell, colNumber) => {
-            rowValues[colNumber - 1] = cell.value;
+            // Handle formula results properly
+            if (cell.type === ExcelJS.ValueType.Formula) {
+              rowValues[colNumber - 1] = cell.result;
+            } else {
+              rowValues[colNumber - 1] = cell.value;
+            }
           });
           
           // Skip empty rows
