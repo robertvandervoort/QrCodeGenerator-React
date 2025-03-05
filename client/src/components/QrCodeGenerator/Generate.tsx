@@ -138,11 +138,18 @@ const Generate = ({
     
     // For SVG format
     if (qrOptions.format === 'svg') {
-      const blob = new Blob([qrCode.dataUrl], { type: "image/svg+xml" });
+      // Extract SVG content from data URL if needed
+      const svgContent = qrCode.dataUrl.startsWith('data:image/svg+xml;charset=utf-8,') 
+        ? decodeURIComponent(qrCode.dataUrl.split(',')[1])
+        : qrCode.dataUrl;
+      
+      const blob = new Blob([svgContent], { type: "image/svg+xml" });
       saveAs(blob, qrCode.filename);
+      logDebug('download', `Downloaded SVG file: ${qrCode.filename}`);
     } else {
       // For PNG and JPEG
       saveAs(qrCode.dataUrl, qrCode.filename);
+      logDebug('download', `Downloaded ${qrOptions.format.toUpperCase()} file: ${qrCode.filename}`);
     }
   };
 
@@ -154,16 +161,31 @@ const Generate = ({
     const zip = new JSZip();
     
     // Add QR codes to zip
-    for (const qrCode of generatedQrCodes) {
-      if (qrOptions.format === 'svg') {
-        // For SVG format
-        zip.file(qrCode.filename, qrCode.dataUrl);
-      } else {
-        // For PNG and JPEG, need to fetch the dataUrl as a blob
-        const response = await fetch(qrCode.dataUrl);
-        const blob = await response.blob();
-        zip.file(qrCode.filename, blob);
+    try {
+      for (const qrCode of generatedQrCodes) {
+        if (qrOptions.format === 'svg') {
+          // For SVG format, we need to extract the actual SVG content from the data URL
+          const svgContent = qrCode.dataUrl.startsWith('data:image/svg+xml;charset=utf-8,') 
+            ? decodeURIComponent(qrCode.dataUrl.split(',')[1])
+            : qrCode.dataUrl;
+          
+          zip.file(qrCode.filename, svgContent);
+          logDebug('download', `Added SVG to ZIP: ${qrCode.filename}`);
+        } else {
+          // For PNG and JPEG, need to fetch the dataUrl as a blob
+          try {
+            const response = await fetch(qrCode.dataUrl);
+            const blob = await response.blob();
+            zip.file(qrCode.filename, blob);
+            logDebug('download', `Added ${qrOptions.format.toUpperCase()} to ZIP: ${qrCode.filename}`);
+          } catch (error) {
+            logDebug('download', `Error adding ${qrCode.filename} to ZIP: ${error}`);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error adding files to ZIP:', error);
+      logDebug('download', `Error creating ZIP file: ${error}`);
     }
     
     // Generate and download zip
@@ -206,7 +228,7 @@ const Generate = ({
               <h3 className="text-sm font-medium text-gray-700">QR Code Gallery</h3>
               <Button
                 onClick={downloadAllQrCodes}
-                variant="success"
+                variant="default"
                 size="sm"
                 className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white"
               >
@@ -340,7 +362,19 @@ const Generate = ({
           currentQr={currentPreviewQr}
           downloadQrCode={() => {
             if (currentPreviewQr) {
-              saveAs(currentPreviewQr.dataUrl, currentPreviewQr.filename);
+              // For SVG format
+              if (qrOptions.format === 'svg') {
+                // Extract SVG content from data URL if needed
+                const svgContent = currentPreviewQr.dataUrl.startsWith('data:image/svg+xml;charset=utf-8,') 
+                  ? decodeURIComponent(currentPreviewQr.dataUrl.split(',')[1])
+                  : currentPreviewQr.dataUrl;
+                
+                const blob = new Blob([svgContent], { type: "image/svg+xml" });
+                saveAs(blob, currentPreviewQr.filename);
+              } else {
+                // For PNG and JPEG
+                saveAs(currentPreviewQr.dataUrl, currentPreviewQr.filename);
+              }
               logDebug('download', `Downloaded QR code from preview: ${currentPreviewQr.filename}`);
             }
           }}
