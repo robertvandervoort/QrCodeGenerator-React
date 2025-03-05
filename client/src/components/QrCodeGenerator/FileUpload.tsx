@@ -26,6 +26,7 @@ const FileUpload = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
 
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -58,6 +59,9 @@ const FileUpload = ({
     setFileError(null);
     logDebug('file', `Processing file: ${file.name}`);
     
+    // Store the original file for later use when switching sheets
+    setOriginalFile(file);
+    
     try {
       let result;
       
@@ -78,8 +82,8 @@ const FileUpload = ({
       
       // Auto-select first sheet for Excel files
       if (result.sheets.length > 0) {
-        setSelectedSheet(result.sheets[0]);
-        logDebug('sheet', `Selected sheet: ${result.sheets[0]}`);
+        setSelectedSheet(result.currentSheet || result.sheets[0]);
+        logDebug('sheet', `Selected sheet: ${result.currentSheet || result.sheets[0]}`);
       }
       
       // Convert all data to objects with column names
@@ -93,7 +97,7 @@ const FileUpload = ({
       
       // Set full data for processing but only show a preview in the table
       setPreviewData(allRows);
-      logDebug('file', `Processed ${allRows.length} rows from file`);
+      logDebug('file', `Processed ${allRows.length} rows from file with ${result.columns.length} columns`);
       
       // Auto-detect URL column
       const possibleUrlColumns = ['url', 'link', 'website', 'webpage', 'web'];
@@ -118,6 +122,7 @@ const FileUpload = ({
     setFileData(null);
     setSelectedSheet("");
     setFileError(null);
+    setOriginalFile(null);
     logDebug('file', 'File removed');
   };
 
@@ -208,9 +213,45 @@ const FileUpload = ({
               <select 
                 className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                 value={selectedSheet}
-                onChange={(e) => {
-                  setSelectedSheet(e.target.value);
-                  logDebug('sheet', `Selected sheet: ${e.target.value}`);
+                onChange={async (e) => {
+                  const sheet = e.target.value;
+                  setSelectedSheet(sheet);
+                  logDebug('sheet', `Switching to sheet: ${sheet}`);
+                  
+                  if (fileData && originalFile && fileData.name.match(/\.(xlsx|xls)$/i)) {
+                    setIsLoading(true);
+                    try {
+                      // Process the original file with the selected sheet
+                      const result = await processExcelFile(originalFile, sheet);
+                      
+                      // Update file data with new sheet data
+                      setFileData({
+                        ...fileData,
+                        data: result.data,
+                        columns: result.columns,
+                        currentSheet: sheet
+                      });
+                      
+                      // Convert to row objects for preview
+                      const allRows = result.data.map(row => {
+                        const rowObj: {[key: string]: any} = {};
+                        result.columns.forEach((col, index) => {
+                          rowObj[col] = row[index];
+                        });
+                        return rowObj;
+                      });
+                      
+                      // Update preview data
+                      setPreviewData(allRows);
+                      logDebug('sheet', `Loaded ${allRows.length} rows from sheet '${sheet}'`);
+                    } catch (error) {
+                      console.error('Error switching sheets:', error);
+                      setFileError(`Error loading sheet: ${sheet}`);
+                      logDebug('sheet', `Error switching to sheet ${sheet}: ${error}`);
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }
                 }}
               >
                 <option value="" disabled>Select a sheet</option>
