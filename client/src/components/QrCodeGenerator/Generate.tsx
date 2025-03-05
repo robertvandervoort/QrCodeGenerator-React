@@ -89,6 +89,7 @@ const Generate = ({
     const generateQrCodesSequentially = async () => {
       const codes: GeneratedQrCode[] = [];
       
+      // previewData already excludes the header row as it's processed in the file processors
       for (let i = 0; i < previewData.length; i++) {
         const row = previewData[i];
         const url = row[selectedUrlColumn];
