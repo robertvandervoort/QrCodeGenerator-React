@@ -81,8 +81,8 @@ const FileUpload = ({
         logDebug('sheet', `Selected sheet: ${result.sheets[0]}`);
       }
       
-      // Set preview data
-      const previewRows = result.data.slice(0, 5).map(row => {
+      // Convert all data to objects with column names
+      const allRows = result.data.map(row => {
         const rowObj: {[key: string]: any} = {};
         result.columns.forEach((col, index) => {
           rowObj[col] = row[index];
@@ -90,7 +90,9 @@ const FileUpload = ({
         return rowObj;
       });
       
-      setPreviewData(previewRows);
+      // Set full data for processing but only show a preview in the table
+      setPreviewData(allRows);
+      logDebug('file', `Processed ${allRows.length} rows from file`);
       
       // Auto-detect URL column
       const possibleUrlColumns = ['url', 'link', 'website', 'webpage', 'web'];

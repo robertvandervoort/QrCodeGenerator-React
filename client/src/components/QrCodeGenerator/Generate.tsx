@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { QrCodeOptions, GeneratedQrCode, DebugLog } from "@/pages/Home";
 import { generateQrCode } from "@/utils/qrCodeUtils";
 import QrPreviewModal from "./QrPreviewModal";
-import { Loader2, Eye, Download, DownloadCloud } from "lucide-react";
+import { Loader2, Eye, Download, DownloadCloud, ChevronLeft, ChevronRight } from "lucide-react";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
 
@@ -48,6 +48,21 @@ const Generate = ({
   const [currentPreviewQr, setCurrentPreviewQr] = useState<GeneratedQrCode | null>(null);
   const [generatedCount, setGeneratedCount] = useState<number>(0);
   const [totalToGenerate, setTotalToGenerate] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [codesPerPage, setCodesPerPage] = useState<number>(10);
+
+  // Get the current page's QR codes
+  const getCurrentPageQrCodes = () => {
+    const indexOfLastQrCode = currentPage * codesPerPage;
+    const indexOfFirstQrCode = indexOfLastQrCode - codesPerPage;
+    return generatedQrCodes.slice(indexOfFirstQrCode, indexOfLastQrCode);
+  };
+
+  // Change page
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    logDebug('app', `Changed to page ${pageNumber}`);
+  };
 
   // Start generating QR codes when component mounts
   useEffect(() => {
@@ -201,33 +216,100 @@ const Generate = ({
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {generatedQrCodes.map((qr, index) => (
-                <div key={index} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="p-2 flex justify-center">
-                    <img src={qr.dataUrl} className="w-32 h-32" alt={`QR Code for ${qr.url}`} />
-                  </div>
-                  <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-700 truncate" title={qr.filename}>
-                      {qr.filename}
-                    </p>
-                    <div className="flex justify-between items-center mt-2">
-                      <button
-                        className="text-xs text-primary hover:text-blue-700 flex items-center"
-                        onClick={() => previewQrCode(index)}
-                      >
-                        <Eye className="mr-1 h-3 w-3" /> Preview
-                      </button>
-                      <button
-                        className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
-                        onClick={() => downloadQrCode(index)}
-                      >
-                        <Download className="mr-1 h-3 w-3" /> Download
-                      </button>
+              {getCurrentPageQrCodes().map((qr, index) => {
+                // Calculate the actual index in the full array
+                const actualIndex = (currentPage - 1) * codesPerPage + index;
+                return (
+                  <div key={actualIndex} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="p-2 flex justify-center">
+                      <img src={qr.dataUrl} className="w-32 h-32" alt={`QR Code for ${qr.url}`} />
+                    </div>
+                    <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-700 truncate" title={qr.filename}>
+                        {qr.filename}
+                      </p>
+                      <div className="flex justify-between items-center mt-2">
+                        <button
+                          className="text-xs text-primary hover:text-blue-700 flex items-center"
+                          onClick={() => previewQrCode(actualIndex)}
+                        >
+                          <Eye className="mr-1 h-3 w-3" /> Preview
+                        </button>
+                        <button
+                          className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
+                          onClick={() => downloadQrCode(actualIndex)}
+                        >
+                          <Download className="mr-1 h-3 w-3" /> Download
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            
+            {/* Pagination Controls */}
+            {generatedQrCodes.length > codesPerPage && (
+              <div className="flex justify-between items-center mt-6">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(currentPage - 1) * codesPerPage + 1}</span> to{" "}
+                  <span className="font-medium">
+                    {Math.min(currentPage * codesPerPage, generatedQrCodes.length)}
+                  </span>{" "}
+                  of <span className="font-medium">{generatedQrCodes.length}</span> QR codes
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="inline-flex items-center"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Page numbers - only show a reasonable number */}
+                  <div className="hidden sm:flex space-x-1">
+                    {Array.from({ length: Math.ceil(generatedQrCodes.length / codesPerPage) }).slice(0, 7).map((_, i) => (
+                      <Button
+                        key={i}
+                        variant={currentPage === i + 1 ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => paginate(i + 1)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {i + 1}
+                      </Button>
+                    ))}
+                    
+                    {Math.ceil(generatedQrCodes.length / codesPerPage) > 7 && (
+                      <>
+                        <span className="text-gray-500 self-center">...</span>
+                        <Button
+                          variant={currentPage === Math.ceil(generatedQrCodes.length / codesPerPage) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => paginate(Math.ceil(generatedQrCodes.length / codesPerPage))}
+                          className="w-8 h-8 p-0"
+                        >
+                          {Math.ceil(generatedQrCodes.length / codesPerPage)}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === Math.ceil(generatedQrCodes.length / codesPerPage)}
+                    className="inline-flex items-center"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         

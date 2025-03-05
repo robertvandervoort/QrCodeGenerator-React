@@ -267,7 +267,9 @@ const Configure = ({
           {/* Data Preview */}
           {previewData.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Data Preview</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Data Preview <span className="text-gray-500 font-normal">(showing first 5 rows of {previewData.length})</span>
+              </h3>
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
                 <div className="max-h-48 overflow-y-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -299,11 +301,10 @@ const Configure = ({
                     </tbody>
                   </table>
                 </div>
-                {previewData.length > 5 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Showing 5 of {previewData.length} rows
-                  </div>
-                )}
+                <div className="mt-2 text-xs text-gray-500 flex justify-between">
+                  <span>Showing 5 of {previewData.length} rows</span>
+                  <span className="text-primary">All {previewData.length} rows will be processed for QR code generation</span>
+                </div>
               </div>
             </div>
           )}
