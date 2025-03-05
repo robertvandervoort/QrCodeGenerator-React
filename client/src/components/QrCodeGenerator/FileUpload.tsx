@@ -86,14 +86,8 @@ const FileUpload = ({
         logDebug('sheet', `Selected sheet: ${result.currentSheet || result.sheets[0]}`);
       }
       
-      // Convert all data to objects with column names
-      const allRows = result.data.map(row => {
-        const rowObj: {[key: string]: any} = {};
-        result.columns.forEach((col, index) => {
-          rowObj[col] = row[index];
-        });
-        return rowObj;
-      });
+      // Data is already in the correct format as Record<string, any>[]
+      const allRows = result.data;
       
       // Set full data for processing but only show a preview in the table
       setPreviewData(allRows);
@@ -232,14 +226,8 @@ const FileUpload = ({
                         currentSheet: sheet
                       });
                       
-                      // Convert to row objects for preview
-                      const allRows = result.data.map(row => {
-                        const rowObj: {[key: string]: any} = {};
-                        result.columns.forEach((col, index) => {
-                          rowObj[col] = row[index];
-                        });
-                        return rowObj;
-                      });
+                      // Data is already in the correct format as Record<string, any>[]
+                      const allRows = result.data;
                       
                       // Update preview data
                       setPreviewData(allRows);

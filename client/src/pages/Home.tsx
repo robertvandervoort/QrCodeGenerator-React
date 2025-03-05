@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 export type FileData = {
   name: string;
   size: number;
-  data: any[][];
+  data: Record<string, any>[];
   sheets: string[];
   columns: string[];
   currentSheet?: string;
