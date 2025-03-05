@@ -20,7 +20,11 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
     reader.onload = (e: ProgressEvent<FileReader>) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, {type: 'binary'});
+        if (!data) {
+          reject(new Error('Failed to read file data'));
+          return;
+        }
+        const workbook = XLSX.read(data, {type: 'binary'} as XLSX.ParsingOptions);
         
         // Get all sheet names
         const sheets = workbook.SheetNames;
@@ -92,10 +96,14 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
     
     reader.onload = (e: ProgressEvent<FileReader>) => {
       try {
-        const data = e.target?.result as string;
+        const data = e.target?.result;
+        if (!data) {
+          reject(new Error('Failed to read CSV file data'));
+          return;
+        }
         
         // Use XLSX to parse CSV
-        const workbook = XLSX.read(data, {type: 'string'});
+        const workbook = XLSX.read(data as string, {type: 'string'} as XLSX.ParsingOptions);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         
