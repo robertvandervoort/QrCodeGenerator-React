@@ -8,9 +8,9 @@ interface ProcessResult {
 }
 
 // Helper to check if a value is an array with at least one non-empty value
-function isValidRow(row: any): boolean {
+function isValidRow(row: unknown): boolean {
   if (!Array.isArray(row)) return false;
-  return row.some(cell => cell !== undefined && cell !== null && cell !== '');
+  return (row as any[]).some(cell => cell !== undefined && cell !== null && cell !== '');
 }
 
 export const processExcelFile = (file: File, sheetName?: string): Promise<ProcessResult> => {
@@ -53,11 +53,12 @@ export const processExcelFile = (file: File, sheetName?: string): Promise<Proces
         const validRows = jsonData.slice(1).filter(isValidRow);
         
         // Now convert to objects with column headers as keys
-        const objectRows = validRows.map((row: any[]) => {
+        const objectRows = validRows.map((row) => {
+          const typedRow = row as any[];
           const obj: Record<string, any> = {};
           columns.forEach((col, i) => {
             if (col) { // Only use non-empty column names
-              obj[col] = row[i];
+              obj[col] = typedRow[i];
             }
           });
           return obj;
@@ -113,11 +114,12 @@ export const processCsvFile = (file: File): Promise<ProcessResult> => {
         const validRows = jsonData.slice(1).filter(isValidRow);
         
         // Now convert to objects with column headers as keys
-        const objectRows = validRows.map((row: any[]) => {
+        const objectRows = validRows.map((row) => {
+          const typedRow = row as any[];
           const obj: Record<string, any> = {};
           columns.forEach((col, i) => {
             if (col) { // Only use non-empty column names
-              obj[col] = row[i];
+              obj[col] = typedRow[i];
             }
           });
           return obj;
