@@ -7,7 +7,9 @@ import Configure from "@/components/QrCodeGenerator/Configure";
 import Generate from "@/components/QrCodeGenerator/Generate";
 import Footer from "@/components/QrCodeGenerator/Footer";
 import DebugPanel from "@/components/QrCodeGenerator/DebugPanel";
+import QuickQrGenerator from "@/components/QrCodeGenerator/QuickQrGenerator";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type FileData = {
   name: string;
@@ -39,6 +41,7 @@ export type DebugLog = {
 
 const Home = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>("quick");
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [debugMode, setDebugMode] = useState<boolean>(false);
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
@@ -99,72 +102,96 @@ const Home = () => {
     }
   };
 
+  const showBatchOptions = () => {
+    setActiveTab("batch");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
       <Header debugMode={debugMode} setDebugMode={setDebugMode} />
       
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <StepIndicator currentStep={currentStep} />
-          
-          <Card className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-            {currentStep === 1 && (
-              <FileUpload 
-                fileData={fileData}
-                setFileData={setFileData}
-                selectedSheet={selectedSheet}
-                setSelectedSheet={setSelectedSheet}
-                logDebug={logDebug}
-                nextStep={nextStep}
-                setPreviewData={setPreviewData}
-              />
-            )}
+          <Tabs 
+            defaultValue="quick" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full mb-6"
+          >
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
+              <TabsTrigger value="quick">Quick QR Code</TabsTrigger>
+              <TabsTrigger value="batch">Batch Processing</TabsTrigger>
+            </TabsList>
             
-            {currentStep === 2 && (
-              <Configure
-                fileData={fileData}
-                previewData={previewData}
-                selectedUrlColumn={selectedUrlColumn}
-                setSelectedUrlColumn={setSelectedUrlColumn}
-                selectedFilenameColumns={selectedFilenameColumns}
-                setSelectedFilenameColumns={setSelectedFilenameColumns}
-                filenameSeparator={filenameSeparator}
-                setFilenameSeparator={setFilenameSeparator}
-                separatorType={separatorType}
-                setSeparatorType={setSeparatorType}
-                customSeparator={customSeparator}
-                setCustomSeparator={setCustomSeparator}
-                qrOptions={qrOptions}
-                setQrOptions={setQrOptions}
-                nextStep={nextStep}
-                prevStep={prevStep}
-                logDebug={logDebug}
-                debugMode={debugMode}
-              />
-            )}
+            <TabsContent value="quick">
+              <Card className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+                <QuickQrGenerator showBatchOptions={showBatchOptions} />
+              </Card>
+            </TabsContent>
             
-            {currentStep === 3 && (
-              <Generate
-                previewData={previewData}
-                selectedUrlColumn={selectedUrlColumn}
-                selectedFilenameColumns={selectedFilenameColumns}
-                filenameSeparator={filenameSeparator}
-                separatorType={separatorType}
-                customSeparator={customSeparator}
-                qrOptions={qrOptions}
-                generatedQrCodes={generatedQrCodes}
-                setGeneratedQrCodes={setGeneratedQrCodes}
-                isGenerating={isGenerating}
-                setIsGenerating={setIsGenerating}
-                generationProgress={generationProgress}
-                setGenerationProgress={setGenerationProgress}
-                prevStep={prevStep}
-                resetApplication={resetApplication}
-                logDebug={logDebug}
-                currentSheet={fileData?.currentSheet}
-              />
-            )}
-          </Card>
+            <TabsContent value="batch">
+              <StepIndicator currentStep={currentStep} />
+              
+              <Card className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+                {currentStep === 1 && (
+                  <FileUpload 
+                    fileData={fileData}
+                    setFileData={setFileData}
+                    selectedSheet={selectedSheet}
+                    setSelectedSheet={setSelectedSheet}
+                    logDebug={logDebug}
+                    nextStep={nextStep}
+                    setPreviewData={setPreviewData}
+                  />
+                )}
+                
+                {currentStep === 2 && (
+                  <Configure
+                    fileData={fileData}
+                    previewData={previewData}
+                    selectedUrlColumn={selectedUrlColumn}
+                    setSelectedUrlColumn={setSelectedUrlColumn}
+                    selectedFilenameColumns={selectedFilenameColumns}
+                    setSelectedFilenameColumns={setSelectedFilenameColumns}
+                    filenameSeparator={filenameSeparator}
+                    setFilenameSeparator={setFilenameSeparator}
+                    separatorType={separatorType}
+                    setSeparatorType={setSeparatorType}
+                    customSeparator={customSeparator}
+                    setCustomSeparator={setCustomSeparator}
+                    qrOptions={qrOptions}
+                    setQrOptions={setQrOptions}
+                    nextStep={nextStep}
+                    prevStep={prevStep}
+                    logDebug={logDebug}
+                    debugMode={debugMode}
+                  />
+                )}
+                
+                {currentStep === 3 && (
+                  <Generate
+                    previewData={previewData}
+                    selectedUrlColumn={selectedUrlColumn}
+                    selectedFilenameColumns={selectedFilenameColumns}
+                    filenameSeparator={filenameSeparator}
+                    separatorType={separatorType}
+                    customSeparator={customSeparator}
+                    qrOptions={qrOptions}
+                    generatedQrCodes={generatedQrCodes}
+                    setGeneratedQrCodes={setGeneratedQrCodes}
+                    isGenerating={isGenerating}
+                    setIsGenerating={setIsGenerating}
+                    generationProgress={generationProgress}
+                    setGenerationProgress={setGenerationProgress}
+                    prevStep={prevStep}
+                    resetApplication={resetApplication}
+                    logDebug={logDebug}
+                    currentSheet={fileData?.currentSheet}
+                  />
+                )}
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       
