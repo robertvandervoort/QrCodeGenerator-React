@@ -109,7 +109,14 @@ const Configure = ({
   return (
     <>
       <div className="p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Configure QR Code Generation</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Configure QR Code Generation</h2>
+        {fileData?.currentSheet && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Working with sheet: <span className="font-medium text-primary">{fileData.currentSheet}</span>
+            </p>
+          </div>
+        )}
         
         <div className="space-y-6">
           {/* URL Column Selection */}
@@ -280,6 +287,7 @@ const Configure = ({
                 <span>
                   Data Preview <span className="text-gray-500 font-normal">
                     {debugMode ? `(showing all ${previewData.length} rows)` : `(showing first 5 rows of ${previewData.length})`}
+                    {fileData?.currentSheet && ` from sheet '${fileData.currentSheet}'`}
                   </span>
                 </span>
                 <span className="text-xs text-primary">All {previewData.length} rows will be processed</span>

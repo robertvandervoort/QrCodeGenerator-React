@@ -24,6 +24,7 @@ interface GenerateProps {
   prevStep: () => void;
   resetApplication: () => void;
   logDebug: (type: DebugLog['type'], message: string) => void;
+  currentSheet?: string;
 }
 
 const Generate = ({
@@ -42,7 +43,8 @@ const Generate = ({
   setGenerationProgress,
   prevStep,
   resetApplication,
-  logDebug
+  logDebug,
+  currentSheet
 }: GenerateProps) => {
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [currentPreviewQr, setCurrentPreviewQr] = useState<GeneratedQrCode | null>(null);
@@ -198,7 +200,14 @@ const Generate = ({
   return (
     <>
       <div className="p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Generated QR Codes</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Generated QR Codes</h2>
+        {currentSheet && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              From sheet: <span className="font-medium text-primary">{currentSheet}</span>
+            </p>
+          </div>
+        )}
         
         {isGenerating && (
           <div className="mb-8">
