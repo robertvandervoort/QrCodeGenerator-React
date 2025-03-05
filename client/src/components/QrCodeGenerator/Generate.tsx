@@ -94,16 +94,39 @@ const Generate = ({
         const row = previewData[i];
         const url = row[selectedUrlColumn];
         
+        // Skip if URL is missing or invalid
         if (!url) {
           logDebug('generation', `Skipping row ${i+1} as URL is missing`);
           continue;
         }
         
-        // Create filename from selected columns 
-        // If row[col] exists, use its value, otherwise use empty string (NOT the column name)
-        const filename = selectedFilenameColumns
-          .map(col => row[col] !== undefined ? row[col] : '')
-          .join(separator) + '.' + qrOptions.format;
+        // Basic URL validation - must start with http:// or https://
+        if (!url.toString().match(/^https?:\/\//i)) {
+          logDebug('generation', `Skipping row ${i+1} as URL is invalid: ${url}`);
+          continue;
+        }
+        
+        // Create filename from selected columns with better handling of missing values
+        // If row[col] exists, use its value; if missing, use "unknown" as fallback
+        const filenameValues = selectedFilenameColumns.map(col => {
+          // Check if the value exists and isn't empty
+          if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
+            return row[col];
+          }
+          // Use "unknown" as a fallback instead of empty string
+          return "unknown";
+        });
+        
+        // Make sure we don't create a filename with just separators (like "_.PNG")
+        const filenameBase = filenameValues.join(separator);
+        const hasValidFilename = filenameBase.replace(new RegExp(separator, 'g'), '').length > 0;
+        
+        // If no valid filename parts, generate a timestamp-based name
+        const filename = hasValidFilename 
+          ? filenameBase + '.' + qrOptions.format
+          : `qr-${Date.now()}.` + qrOptions.format;
+          
+        logDebug('generation', `Created filename: ${filename} from values: ${filenameValues.join(', ')}`);  
         
         try {
           const dataUrl = await generateQrCode(url, qrOptions);
