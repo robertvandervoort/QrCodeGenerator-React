@@ -268,7 +268,7 @@ const Generate = ({
                 onClick={downloadAllQrCodes}
                 variant="default"
                 size="sm"
-                className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white"
+                className="inline-flex items-center bg-green-500 hover:bg-green-600 text-black font-bold"
               >
                 <DownloadCloud className="mr-1 h-4 w-4" /> 
                 Download All as ZIP
@@ -296,7 +296,7 @@ const Generate = ({
                           <Eye className="mr-1 h-3 w-3" /> Preview
                         </button>
                         <button
-                          className="text-xs text-gray-600 hover:text-gray-900 flex items-center"
+                          className="text-xs bg-green-500 hover:bg-green-600 text-black font-bold px-1.5 py-0.5 rounded flex items-center"
                           onClick={() => downloadQrCode(actualIndex)}
                         >
                           <Download className="mr-1 h-3 w-3" /> Download

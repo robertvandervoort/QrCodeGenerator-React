@@ -46,7 +46,7 @@ const QrPreviewModal = ({
         <DialogFooter className="bg-gray-50 px-4 py-3 sm:px-6">
           <Button
             onClick={downloadQrCode}
-            className="inline-flex items-center"
+            className="inline-flex items-center bg-green-500 hover:bg-green-600 text-black font-bold"
           >
             <Download className="mr-2 h-4 w-4" />
             Download

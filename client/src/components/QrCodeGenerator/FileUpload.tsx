@@ -202,7 +202,7 @@ const FileUpload = ({
         
         {fileData && !isLoading && fileData.sheets.length > 0 && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Sheet</label>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Select Sheet</h2>
             <div className="relative">
               <select 
                 className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
