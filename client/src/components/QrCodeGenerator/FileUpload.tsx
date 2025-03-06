@@ -272,7 +272,7 @@ const FileUpload = ({
         <Button
           onClick={nextStep}
           disabled={!canProceedToNextStep}
-          className="inline-flex items-center"
+          className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white"
         >
           Next
           <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
