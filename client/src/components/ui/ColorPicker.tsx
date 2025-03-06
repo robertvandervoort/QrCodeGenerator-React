@@ -42,74 +42,19 @@ const ColorPicker = ({ color, onChange, label }: ColorPickerProps) => {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <div className="flex flex-col gap-2">
-        {/* Color picker visible directly without needing a popover */}
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={inputColor}
-            onChange={handleColorPickerChange}
-            className="h-10 w-20 cursor-pointer"
-          />
-          <Input
-            value={inputColor}
-            onChange={handleHexChange}
-            placeholder="#000000"
-            className="flex-1"
-          />
-        </div>
-
-        {/* RGB values */}
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <Label htmlFor="red-value">R</Label>
-            <Input
-              id="red-value"
-              type="number"
-              min="0"
-              max="255"
-              value={rgb.r}
-              onChange={(e) => {
-                const r = Math.max(0, Math.min(255, Number(e.target.value) || 0));
-                const newColor = `#${r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
-                setInputColor(newColor);
-                onChange(newColor);
-              }}
-            />
-          </div>
-          <div>
-            <Label htmlFor="green-value">G</Label>
-            <Input
-              id="green-value"
-              type="number"
-              min="0"
-              max="255"
-              value={rgb.g}
-              onChange={(e) => {
-                const g = Math.max(0, Math.min(255, Number(e.target.value) || 0));
-                const newColor = `#${rgb.r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
-                setInputColor(newColor);
-                onChange(newColor);
-              }}
-            />
-          </div>
-          <div>
-            <Label htmlFor="blue-value">B</Label>
-            <Input
-              id="blue-value"
-              type="number"
-              min="0"
-              max="255"
-              value={rgb.b}
-              onChange={(e) => {
-                const b = Math.max(0, Math.min(255, Number(e.target.value) || 0));
-                const newColor = `#${rgb.r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-                setInputColor(newColor);
-                onChange(newColor);
-              }}
-            />
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={inputColor}
+          onChange={handleColorPickerChange}
+          className="h-10 w-20 cursor-pointer"
+        />
+        <Input
+          value={inputColor}
+          onChange={handleHexChange}
+          placeholder="#000000"
+          className="flex-1"
+        />
       </div>
     </div>
   );
