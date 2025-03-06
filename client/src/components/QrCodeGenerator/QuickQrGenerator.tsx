@@ -13,17 +13,24 @@ interface QuickQrGeneratorProps {
   showBatchOptions: () => void;
 }
 
+import { QrCodeOptions } from "../../../shared/types";
+import { ColorPicker } from "../ui/ColorPicker";
+
 const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
   const { toast } = useToast();
   const [url, setUrl] = useState("");
   const [size, setSize] = useState(900); // Default for print applications
   const [generatedQrCode, setGeneratedQrCode] = useState<string | null>(null);
+  const [foregroundColor, setForegroundColor] = useState("#000000");
+  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
 
   const qrOptions: QrCodeOptions = {
     size,
     margin: 4,
     format: "png",
-    includeText: true
+    includeText: true,
+    foregroundColor,
+    backgroundColor
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +45,8 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     // Basic URL validation - must start with http:// or https://
     return !!url.match(/^https?:\/\//i);
   };
+
+  import { generateQrCode } from "../../lib/qrCodeGenerator";
 
   const generateSingleQrCode = async () => {
     if (!url) {
@@ -56,6 +65,17 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         variant: "destructive"
       });
       return;
+    }
+    
+    try {
+      const dataUrl = await generateQrCode(url, qrOptions);
+      setGeneratedQrCode(dataUrl);
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate QR code. Please try again.",
+        variant: "destructive"
+      });
     }
 
     try {
@@ -122,6 +142,22 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                   max={2000}
                   value={size}
                   onChange={(e) => setSize(parseInt(e.target.value) || 250)}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ColorPicker 
+              color={foregroundColor} 
+              onChange={setForegroundColor} 
+              label="QR code color" 
+            />
+            <ColorPicker 
+              color={backgroundColor} 
+              onChange={setBackgroundColor} 
+              label="Background color" 
+            />
                   className="w-full"
                 />
               </div>
