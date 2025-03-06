@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, ChangeEvent, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { FileData, QrCodeOptions, DebugLog } from "@/pages/Home";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,8 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { ColorPicker } from "@/components/ui/ColorPicker";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Image, UploadCloud } from "lucide-react";
 import { detectUrlColumns } from "@/utils/fileProcessors";
+import { getClipArtDataUrl, fileToDataUrl } from "@/lib/clipart";
 
 interface ConfigureProps {
   fileData: FileData | null;
@@ -53,6 +54,9 @@ const Configure = ({
   logDebug,
   debugMode
 }: ConfigureProps) => {
+  // State for image upload
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Auto-detect URL column on component mount
   useEffect(() => {
@@ -318,38 +322,91 @@ const Configure = ({
               <h4 className="text-sm font-medium text-gray-700 mb-2">Center Image Options</h4>
               
               <div className="flex items-center space-x-4 mb-4">
-                <Select
-                  value={qrOptions.centerImage ? "clipart" : "none"}
-                  onValueChange={(value) => {
-                    if (value === "none") {
-                      // Remove center image
-                      const newOptions = { ...qrOptions };
-                      delete newOptions.centerImage;
-                      delete newOptions.centerImageSize;
-                      delete newOptions.centerImageIsClipArt;
-                      setQrOptions(newOptions);
-                      logDebug('config', 'Removed center image from QR code');
-                    } else if (value === "clipart") {
-                      // Set default clipart (globe icon)
-                      const svgIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1nbG9iZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMmExNS4zIDE1LjMgMCAwIDEgNCAxMCAxNS4zIDE1LjMgMCAwIDEtNCAxMCAxNS4zIDE1LjMgMCAwIDEtNC0xMCAxNS4zIDE1LjMgMCAwIDEgNC0xMHoiLz48cGF0aCBkPSJNMiAxMmgyMCIvPjwvc3ZnPg==';
+                {uploadingImage ? (
+                  <div className="flex items-center gap-2 w-40">
+                    <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+                    <span className="text-sm text-gray-600">Uploading...</span>
+                  </div>
+                ) : (
+                  <Select
+                    value={qrOptions.centerImage ? (qrOptions.centerImageIsClipArt ? "clipart" : "custom") : "none"}
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        // Remove center image
+                        const newOptions = { ...qrOptions };
+                        delete newOptions.centerImage;
+                        delete newOptions.centerImageSize;
+                        delete newOptions.centerImageIsClipArt;
+                        setQrOptions(newOptions);
+                        logDebug('config', 'Removed center image from QR code');
+                      } else if (value === "clipart") {
+                        // Set default clipart (globe icon)
+                        const svgIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1nbG9iZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMmExNS4zIDE1LjMgMCAwIDEgNCAxMCAxNS4zIDE1LjMgMCAwIDEtNCAxMCAxNS4zIDE1LjMgMCAwIDEtNC0xMCAxNS4zIDE1LjMgMCAwIDEgNC0xMHoiLz48cGF0aCBkPSJNMiAxMmgyMCIvPjwvc3ZnPg==';
+                        setQrOptions({
+                          ...qrOptions,
+                          centerImage: svgIcon,
+                          centerImageSize: 20,
+                          centerImageIsClipArt: true
+                        });
+                        logDebug('config', 'Added default center image (globe) to QR code');
+                      } else if (value === "custom") {
+                        // Trigger file input click
+                        if (fileInputRef.current) {
+                          fileInputRef.current.click();
+                        }
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Center image" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No center image</SelectItem>
+                      <SelectItem value="clipart">Use clipart</SelectItem>
+                      <SelectItem value="custom">Upload image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                
+                {/* Hidden file input for image upload */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    try {
+                      setUploadingImage(true);
+                      logDebug('config', `Uploading custom image: ${file.name}`);
+                      
+                      // Convert the file to data URL
+                      const dataUrl = await fileToDataUrl(file);
+                      
+                      // Update QR options with the custom image
                       setQrOptions({
                         ...qrOptions,
-                        centerImage: svgIcon,
+                        centerImage: dataUrl,
                         centerImageSize: 20,
-                        centerImageIsClipArt: true
+                        centerImageIsClipArt: false
                       });
-                      logDebug('config', 'Added default center image (globe) to QR code');
+                      
+                      logDebug('config', 'Custom image uploaded successfully');
+                    } catch (error) {
+                      console.error('Error uploading image:', error);
+                      logDebug('config', `Error uploading image: ${error}`);
+                    } finally {
+                      setUploadingImage(false);
+                      
+                      // Reset file input
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
                     }
                   }}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Center image" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No center image</SelectItem>
-                    <SelectItem value="clipart">Use clipart</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
                 
                 {qrOptions.centerImage && (
                   <div className="flex items-center space-x-2">
@@ -391,7 +448,7 @@ const Configure = ({
                       )}
                     </div>
                     <div>
-                      <p>Clipart preview</p>
+                      <p>{qrOptions.centerImageIsClipArt ? "Clipart preview" : "Custom image"}</p>
                       <p className="text-xs text-gray-500">Will be placed in center of QR code</p>
                     </div>
                   </div>
