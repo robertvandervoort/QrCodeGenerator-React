@@ -1331,6 +1331,10 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                 {qrCodeType === 'phone' && 'Include phone number below QR code'}
                 {qrCodeType === 'email' && 'Include email address below QR code'}
                 {qrCodeType === 'vcard' && 'Include contact name below QR code'}
+                {qrCodeType === 'wifi' && 'Include network name below QR code'}
+                {qrCodeType === 'sms' && 'Include phone number below QR code'}
+                {qrCodeType === 'geo' && 'Include coordinates below QR code'}
+                {qrCodeType === 'calendar' && 'Include event name below QR code'}
               </Label>
             </div>
 
@@ -1342,6 +1346,10 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
               {qrCodeType === 'phone' && <><Phone className="h-4 w-4 mr-2" /> Generate Phone QR Code</>}
               {qrCodeType === 'email' && <><Mail className="h-4 w-4 mr-2" /> Generate Email QR Code</>}
               {qrCodeType === 'vcard' && <><User className="h-4 w-4 mr-2" /> Generate vCard QR Code</>}
+              {qrCodeType === 'wifi' && <><Wifi className="h-4 w-4 mr-2" /> Generate WiFi QR Code</>}
+              {qrCodeType === 'sms' && <><MessageSquare className="h-4 w-4 mr-2" /> Generate SMS QR Code</>}
+              {qrCodeType === 'geo' && <><MapPin className="h-4 w-4 mr-2" /> Generate Location QR Code</>}
+              {qrCodeType === 'calendar' && <><Calendar className="h-4 w-4 mr-2" /> Generate Calendar QR Code</>}
             </Button>
           </div>
         </CardContent>
@@ -1384,6 +1392,10 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                 {qrCodeType === 'phone' && 'Enter a phone number and click Generate'}
                 {qrCodeType === 'email' && 'Enter an email address and click Generate'}
                 {qrCodeType === 'vcard' && 'Fill in the contact info and click Generate'}
+                {qrCodeType === 'wifi' && 'Enter WiFi network details and click Generate'}
+                {qrCodeType === 'sms' && 'Enter a phone number and message text, then click Generate'}
+                {qrCodeType === 'geo' && 'Enter latitude and longitude coordinates, then click Generate'}
+                {qrCodeType === 'calendar' && 'Enter event details with dates and click Generate'}
               </p>
             </div>
           )}
