@@ -27,6 +27,9 @@ export type QrCodeOptions = {
   includeText: boolean;
   foregroundColor?: string;
   backgroundColor?: string;
+  centerImage?: string;
+  centerImageSize?: number;
+  centerImageIsClipArt?: boolean;
 };
 
 export type GeneratedQrCode = {

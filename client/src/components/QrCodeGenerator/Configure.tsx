@@ -312,6 +312,92 @@ const Configure = ({
                 />
               </div>
             </div>
+            
+            {/* Center Image options */}
+            <div className="mt-4 border-t pt-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Center Image Options</h4>
+              
+              <div className="flex items-center space-x-4 mb-4">
+                <Select
+                  value={qrOptions.centerImage ? "clipart" : "none"}
+                  onValueChange={(value) => {
+                    if (value === "none") {
+                      // Remove center image
+                      const newOptions = { ...qrOptions };
+                      delete newOptions.centerImage;
+                      delete newOptions.centerImageSize;
+                      delete newOptions.centerImageIsClipArt;
+                      setQrOptions(newOptions);
+                      logDebug('config', 'Removed center image from QR code');
+                    } else if (value === "clipart") {
+                      // Set default clipart (globe icon)
+                      const svgIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1nbG9iZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMmExNS4zIDE1LjMgMCAwIDEgNCAxMCAxNS4zIDE1LjMgMCAwIDEtNCAxMCAxNS4zIDE1LjMgMCAwIDEtNC0xMCAxNS4zIDE1LjMgMCAwIDEgNC0xMHoiLz48cGF0aCBkPSJNMiAxMmgyMCIvPjwvc3ZnPg==';
+                      setQrOptions({
+                        ...qrOptions,
+                        centerImage: svgIcon,
+                        centerImageSize: 20,
+                        centerImageIsClipArt: true
+                      });
+                      logDebug('config', 'Added default center image (globe) to QR code');
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Center image" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No center image</SelectItem>
+                    <SelectItem value="clipart">Use clipart</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {qrOptions.centerImage && (
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="center-image-size" className="text-sm whitespace-nowrap">Size:</Label>
+                    <div className="w-24">
+                      <Slider
+                        id="center-image-size"
+                        min={10}
+                        max={30}
+                        step={1}
+                        value={[qrOptions.centerImageSize || 20]}
+                        onValueChange={(value) => handleQrOptionChange('centerImageSize', value[0])}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500">{qrOptions.centerImageSize || 20}%</span>
+                  </div>
+                )}
+              </div>
+              
+              {qrOptions.centerImage && (
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+                  <p className="text-gray-600 mb-2">
+                    <strong>Note:</strong> Adding a center image may reduce scanability. 
+                    Using the highest error correction level (H) to ensure the QR code remains scannable.
+                  </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-16 h-16 border border-gray-300 rounded bg-white flex items-center justify-center p-1">
+                      {qrOptions.centerImage && (
+                        <img 
+                          src={qrOptions.centerImage} 
+                          alt="Center image preview" 
+                          className="max-w-full max-h-full"
+                          style={{ 
+                            filter: qrOptions.foregroundColor && qrOptions.foregroundColor !== '#000000' 
+                              ? `drop-shadow(0 0 1px ${qrOptions.foregroundColor})` 
+                              : 'none'
+                          }}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <p>Clipart preview</p>
+                      <p className="text-xs text-gray-500">Will be placed in center of QR code</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Data Preview */}
