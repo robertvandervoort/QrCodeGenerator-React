@@ -73,6 +73,16 @@ const Generate = ({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // Regenerate QR codes when options change (after initial generation)
+  useEffect(() => {
+    // Only regenerate if we already have generated QR codes and are not currently generating
+    if (previewData.length > 0 && selectedUrlColumn && generatedQrCodes.length > 0 && !isGenerating) {
+      logDebug('generation', 'QR options changed, regenerating QR codes');
+      generateQrCodes();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrOptions]);
 
   const generateQrCodes = async () => {
     setIsGenerating(true);
