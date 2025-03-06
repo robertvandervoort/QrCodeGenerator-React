@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { ColorPicker } from "@/components/ui/color-picker";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
 import { Download } from 'lucide-react';
-import { useToast } from "../ui/Toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuickQrGeneratorProps {
   showBatchOptions: () => void;
