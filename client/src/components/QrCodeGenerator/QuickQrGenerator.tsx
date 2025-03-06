@@ -10,7 +10,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
 import { Download } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { QrCodeOptions } from '@/pages/Home';
+// Define QrCodeOptions directly here to match the shared type
+interface QrCodeOptions {
+  size: number;
+  margin: number;
+  format: string;
+  includeText?: boolean;
+  foregroundColor?: string;
+  backgroundColor?: string;
+}
 
 interface QuickQrGeneratorProps {
   showBatchOptions: () => void;
@@ -173,7 +181,6 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
             {/* Colors */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="block text-sm font-medium text-gray-700 mb-2">QR Code Color</Label>
                 <ColorPicker 
                   color={foregroundColor} 
                   onChange={setForegroundColor} 
@@ -181,7 +188,6 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                 />
               </div>
               <div>
-                <Label className="block text-sm font-medium text-gray-700 mb-2">Background Color</Label>
                 <ColorPicker 
                   color={backgroundColor} 
                   onChange={setBackgroundColor} 
