@@ -865,6 +865,208 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
               </div>
             )}
             
+            {/* WiFi Network Form */}
+            {qrCodeType === 'wifi' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="wifi-ssid" className="text-sm font-medium text-gray-700">Network Name (SSID)</Label>
+                  <Input
+                    id="wifi-ssid"
+                    type="text"
+                    placeholder="Your WiFi Network"
+                    value={wifiData.ssid}
+                    onChange={e => setWifiData({ ...wifiData, ssid: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="wifi-encryption" className="text-sm font-medium text-gray-700">Security Type</Label>
+                  <Select
+                    value={wifiData.encryption}
+                    onValueChange={(value) => setWifiData({ 
+                      ...wifiData, 
+                      encryption: value as WifiData['encryption'],
+                      // Clear password if "No Password" is selected
+                      password: value === 'nopass' ? '' : wifiData.password
+                    })}
+                  >
+                    <SelectTrigger id="wifi-encryption">
+                      <SelectValue placeholder="Select security type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WPA">WPA/WPA2</SelectItem>
+                      <SelectItem value="WEP">WEP</SelectItem>
+                      <SelectItem value="WPA2-EAP">Enterprise (WPA2-EAP)</SelectItem>
+                      <SelectItem value="nopass">No Password</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {wifiData.encryption !== 'nopass' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="wifi-password" className="text-sm font-medium text-gray-700">Password</Label>
+                    <Input
+                      id="wifi-password"
+                      type="password"
+                      placeholder="WiFi Password"
+                      value={wifiData.password}
+                      onChange={e => setWifiData({ ...wifiData, password: e.target.value })}
+                    />
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="wifi-hidden"
+                    checked={wifiData.hidden}
+                    onCheckedChange={(checked) => setWifiData({ ...wifiData, hidden: checked === true })}
+                  />
+                  <Label htmlFor="wifi-hidden" className="text-sm text-gray-700">
+                    Hidden Network
+                  </Label>
+                </div>
+              </div>
+            )}
+            
+            {/* SMS Message Form */}
+            {qrCodeType === 'sms' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sms-phone" className="text-sm font-medium text-gray-700">Phone Number (with country code)</Label>
+                  <Input
+                    id="sms-phone"
+                    type="tel"
+                    placeholder="+12025550123"
+                    value={smsData.phoneNumber}
+                    onChange={e => setSmsData({ ...smsData, phoneNumber: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Format: +[country code][number] (e.g., +12025550123)
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="sms-message" className="text-sm font-medium text-gray-700">Message (optional)</Label>
+                  <Textarea
+                    id="sms-message"
+                    placeholder="Enter message text"
+                    value={smsData.message}
+                    onChange={e => setSmsData({ ...smsData, message: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Geographic Location Form */}
+            {qrCodeType === 'geo' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="geo-latitude" className="text-sm font-medium text-gray-700">Latitude</Label>
+                    <Input
+                      id="geo-latitude"
+                      type="text"
+                      placeholder="37.7749"
+                      value={geoData.latitude}
+                      onChange={e => setGeoData({ ...geoData, latitude: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Value between -90 and 90
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="geo-longitude" className="text-sm font-medium text-gray-700">Longitude</Label>
+                    <Input
+                      id="geo-longitude"
+                      type="text"
+                      placeholder="-122.4194"
+                      value={geoData.longitude}
+                      onChange={e => setGeoData({ ...geoData, longitude: e.target.value })}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Value between -180 and 180
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="geo-altitude" className="text-sm font-medium text-gray-700">Altitude (optional)</Label>
+                  <Input
+                    id="geo-altitude"
+                    type="text"
+                    placeholder="0"
+                    value={geoData.altitude}
+                    onChange={e => setGeoData({ ...geoData, altitude: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    In meters above sea level
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Calendar Event Form */}
+            {qrCodeType === 'calendar' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="calendar-summary" className="text-sm font-medium text-gray-700">Event Title</Label>
+                  <Input
+                    id="calendar-summary"
+                    type="text"
+                    placeholder="Meeting with Team"
+                    value={calendarData.summary}
+                    onChange={e => setCalendarData({ ...calendarData, summary: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="calendar-start" className="text-sm font-medium text-gray-700">Start Time</Label>
+                    <Input
+                      id="calendar-start"
+                      type="datetime-local"
+                      value={calendarData.start}
+                      onChange={e => setCalendarData({ ...calendarData, start: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="calendar-end" className="text-sm font-medium text-gray-700">End Time</Label>
+                    <Input
+                      id="calendar-end"
+                      type="datetime-local"
+                      value={calendarData.end}
+                      onChange={e => setCalendarData({ ...calendarData, end: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="calendar-location" className="text-sm font-medium text-gray-700">Location (optional)</Label>
+                  <Input
+                    id="calendar-location"
+                    type="text"
+                    placeholder="Conference Room A"
+                    value={calendarData.location}
+                    onChange={e => setCalendarData({ ...calendarData, location: e.target.value })}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="calendar-description" className="text-sm font-medium text-gray-700">Description (optional)</Label>
+                  <Textarea
+                    id="calendar-description"
+                    placeholder="Event details and notes"
+                    value={calendarData.description}
+                    onChange={e => setCalendarData({ ...calendarData, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+            
             {qrCodeType === 'vcard' && (
               <div className="space-y-4 border border-gray-200 rounded-md p-4">
                 <h3 className="font-medium text-gray-700">Contact Information</h3>
