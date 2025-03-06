@@ -93,11 +93,51 @@ const Configure = ({
   };
 
   const handleQrOptionChange = (name: keyof QrCodeOptions, value: any) => {
-    setQrOptions({
-      ...qrOptions,
-      [name]: value
-    });
-    logDebug('config', `Updated QR option ${name}: ${value}`);
+    // For cornerStyle switching, ensure proper reset when going back to square
+    if (name === 'cornerStyle') {
+      // If switching to square from another style, ensure we start fresh with default QR code
+      if (value === 'square' && qrOptions.cornerStyle !== 'square') {
+        // Generate a fresh QR with square corners (reset styling)
+        const updatedOptions = {
+          ...qrOptions,
+          cornerStyle: 'square',
+        };
+        setQrOptions(updatedOptions);
+        logDebug('config', `Reset cornerStyle to square`);
+      } else {
+        setQrOptions({
+          ...qrOptions,
+          [name]: value
+        });
+        logDebug('config', `Updated QR option ${name}: ${value}`);
+      }
+    }
+    // For dotStyle switching, handle similar behavior
+    else if (name === 'dotStyle') {
+      if (value === 'square' && qrOptions.dotStyle !== 'square') {
+        // Generate a fresh QR with square dots (reset styling)
+        const updatedOptions = {
+          ...qrOptions,
+          dotStyle: 'square',
+        };
+        setQrOptions(updatedOptions);
+        logDebug('config', `Reset dotStyle to square`);
+      } else {
+        setQrOptions({
+          ...qrOptions,
+          [name]: value
+        });
+        logDebug('config', `Updated QR option ${name}: ${value}`);
+      }
+    }
+    // For all other properties, just update normally
+    else {
+      setQrOptions({
+        ...qrOptions,
+        [name]: value
+      });
+      logDebug('config', `Updated QR option ${name}: ${value}`);
+    }
   };
 
   const getFilenamePreview = () => {

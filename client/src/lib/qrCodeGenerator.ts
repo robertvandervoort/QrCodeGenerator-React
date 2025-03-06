@@ -368,23 +368,106 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
           }
           
           // Apply corner styling to the finder patterns if requested
+          // Only if we have a cornerStyle set AND it's not square
           if (options.cornerStyle && options.cornerStyle !== 'square') {
-            // First completely clear each finder pattern area to remove the original pattern
-            ctx.fillStyle = options.backgroundColor || '#FFFFFF';
-            for (const [x, y, w, h] of finderPositions) {
-              // Clear a slightly larger area to ensure complete coverage
-              const padding = moduleEstimate / 4;
-              ctx.fillRect(
-                x - padding,
-                y - padding,
-                w + padding * 2,
-                h + padding * 2
-              );
-            }
+            // We'll use a more reliable approach - instead of trying to modify in place,
+            // generate a completely fresh QR code with styled corners from scratch
+            const originalQRImage = new Image();
+            originalQRImage.src = qrCodeDataUrl;
             
-            // Now draw our custom styled finder patterns
-            for (const [x, y, w, h] of finderPositions) {
-              applyCornerStyleToFinder(ctx, x, y, w, options);
+            // Get the QR code with proper finder patterns
+            const newCanvas = document.createElement('canvas');
+            const newCtx = newCanvas.getContext('2d');
+            
+            if (newCtx) {
+              newCanvas.width = canvas.width;
+              newCanvas.height = canvas.height;
+              
+              // Fill with background color
+              newCtx.fillStyle = options.backgroundColor || '#FFFFFF';
+              newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+              
+              // Draw the current QR code state
+              newCtx.drawImage(canvas, 0, 0);
+              
+              // Completely clear each finder pattern area
+              newCtx.fillStyle = options.backgroundColor || '#FFFFFF';
+              for (const [x, y, w, h] of finderPositions) {
+                // Clear a slightly larger area to ensure complete coverage
+                const padding = moduleEstimate / 3;
+                newCtx.fillRect(
+                  x - padding,
+                  y - padding,
+                  w + padding * 2,
+                  h + padding * 2
+                );
+              }
+              
+              // Draw custom styled finder patterns
+              for (const [x, y, w, h] of finderPositions) {
+                const cornerStyle = options.cornerStyle || 'square';
+                const radiusPercent = Math.min(Math.max(options.cornerRadius || 10, 1), 30) / 100;
+                
+                // Calculate radius based on finder pattern size
+                const radius = w * radiusPercent;
+                
+                // Draw position markers with rounded corners
+                newCtx.fillStyle = options.foregroundColor || '#000000';
+                
+                // Outer square with rounded corners
+                newCtx.beginPath();
+                if (cornerStyle === 'rounded') {
+                  roundRect(newCtx, x, y, w, h, radius);
+                } else if (cornerStyle === 'extraRounded') {
+                  roundRect(newCtx, x, y, w, h, radius * 1.5);
+                } else {
+                  newCtx.rect(x, y, w, h);
+                }
+                newCtx.fill();
+                
+                // Inner white square (smaller)
+                const innerMargin = w / 7;
+                const innerSize = w - (innerMargin * 2);
+                newCtx.fillStyle = options.backgroundColor || '#FFFFFF';
+                newCtx.beginPath();
+                if (cornerStyle === 'rounded') {
+                  roundRect(
+                    newCtx, 
+                    x + innerMargin, 
+                    y + innerMargin, 
+                    innerSize, 
+                    innerSize, 
+                    radius * 0.7
+                  );
+                } else if (cornerStyle === 'extraRounded') {
+                  roundRect(
+                    newCtx, 
+                    x + innerMargin, 
+                    y + innerMargin, 
+                    innerSize, 
+                    innerSize, 
+                    radius
+                  );
+                } else {
+                  newCtx.rect(x + innerMargin, y + innerMargin, innerSize, innerSize);
+                }
+                newCtx.fill();
+                
+                // Center black square (smallest)
+                const centerMargin = innerMargin * 2;
+                const centerSize = w - (centerMargin * 2);
+                newCtx.fillStyle = options.foregroundColor || '#000000';
+                newCtx.fillRect(
+                  x + centerMargin, 
+                  y + centerMargin, 
+                  centerSize, 
+                  centerSize
+                );
+              }
+              
+              // Copy the new canvas back to the original
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(newCanvas, 0, 0);
             }
           }
           
