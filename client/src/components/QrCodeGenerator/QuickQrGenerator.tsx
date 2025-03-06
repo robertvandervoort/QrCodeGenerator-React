@@ -8,7 +8,10 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
-import { Download, Link, Phone, Mail, User } from 'lucide-react';
+import { 
+  Download, Link, Phone, Mail, User, 
+  Wifi, MessageSquare, MapPin, Calendar 
+} from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 // Define QrCodeOptions directly here to match the shared type
@@ -26,7 +29,7 @@ interface QuickQrGeneratorProps {
 }
 
 // QR code type definitions
-type QrCodeType = 'url' | 'phone' | 'email' | 'vcard';
+type QrCodeType = 'url' | 'phone' | 'email' | 'vcard' | 'wifi' | 'sms' | 'geo' | 'calendar';
 
 // vCard interface
 interface VCardData {
@@ -52,6 +55,36 @@ interface EmailData {
   email: string;
   subject?: string;
   body?: string;
+}
+
+// WiFi network interface
+interface WifiData {
+  ssid: string;
+  password: string;
+  encryption: 'WEP' | 'WPA' | 'WPA2-EAP' | 'nopass';
+  hidden: boolean;
+}
+
+// SMS message interface
+interface SmsData {
+  phoneNumber: string;
+  message: string;
+}
+
+// Geographic location interface
+interface GeoData {
+  latitude: string;
+  longitude: string;
+  altitude?: string;
+}
+
+// Calendar event interface
+interface CalendarData {
+  summary: string;
+  start: string;
+  end: string;
+  location?: string;
+  description?: string;
 }
 
 const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
@@ -98,6 +131,36 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     website: '',
     note: '',
   });
+  
+  // WiFi type data
+  const [wifiData, setWifiData] = useState<WifiData>({
+    ssid: '',
+    password: '',
+    encryption: 'WPA',
+    hidden: false
+  });
+  
+  // SMS type data
+  const [smsData, setSmsData] = useState<SmsData>({
+    phoneNumber: '',
+    message: ''
+  });
+  
+  // Geographic location type data
+  const [geoData, setGeoData] = useState<GeoData>({
+    latitude: '',
+    longitude: '',
+    altitude: ''
+  });
+  
+  // Calendar event type data
+  const [calendarData, setCalendarData] = useState<CalendarData>({
+    summary: '',
+    start: '',
+    end: '',
+    location: '',
+    description: ''
+  });
 
   const handleSizeChange = (value: number[]) => {
     setSize(value[0]);
@@ -122,6 +185,40 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setVCardData({ ...vCardData, [field]: e.target.value });
+  };
+  
+  // Event handlers for wifi data
+  const handleWifiDataChange = (field: keyof WifiData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    if (field === 'hidden') {
+      setWifiData({ ...wifiData, hidden: (e.target as HTMLInputElement).checked });
+    } else if (field === 'encryption') {
+      setWifiData({ ...wifiData, encryption: e.target.value as WifiData['encryption'] });
+    } else {
+      setWifiData({ ...wifiData, [field]: e.target.value });
+    }
+  };
+  
+  // Event handlers for SMS data
+  const handleSmsDataChange = (field: keyof SmsData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setSmsData({ ...smsData, [field]: e.target.value });
+  };
+  
+  // Event handlers for geographic location data
+  const handleGeoDataChange = (field: keyof GeoData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setGeoData({ ...geoData, [field]: e.target.value });
+  };
+  
+  // Event handlers for calendar data
+  const handleCalendarDataChange = (field: keyof CalendarData) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setCalendarData({ ...calendarData, [field]: e.target.value });
   };
   
   // Validation functions
@@ -194,6 +291,79 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     
     vcard += 'END:VCARD';
     return vcard;
+  };
+  
+  // Function to create WiFi network QR code content
+  const createWifiData = (data: WifiData): string => {
+    // Format: WIFI:T:WPA;S:SSID;P:PASSWORD;H:true/false;;
+    let wifi = 'WIFI:';
+    wifi += `T:${data.encryption};`;
+    wifi += `S:${data.ssid};`;
+    
+    if (data.password && data.encryption !== 'nopass') {
+      wifi += `P:${data.password};`;
+    }
+    
+    if (data.hidden) {
+      wifi += 'H:true;';
+    }
+    
+    wifi += ';';
+    return wifi;
+  };
+  
+  // Function to create SMS QR code content
+  const createSmsData = (data: SmsData): string => {
+    // Format: SMSTO:PHONE_NUMBER:MESSAGE
+    let sms = `SMSTO:${data.phoneNumber}:`;
+    if (data.message) {
+      sms += data.message;
+    }
+    return sms;
+  };
+  
+  // Function to create geographic location QR code content
+  const createGeoData = (data: GeoData): string => {
+    // Format: geo:latitude,longitude,altitude
+    let geo = `geo:${data.latitude},${data.longitude}`;
+    if (data.altitude) {
+      geo += `,${data.altitude}`;
+    }
+    return geo;
+  };
+  
+  // Function to create calendar event QR code content
+  const createCalendarData = (data: CalendarData): string => {
+    // Format: BEGIN:VEVENT ... END:VEVENT
+    let calendar = 'BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n';
+    
+    // Required properties
+    calendar += `SUMMARY:${data.summary}\n`;
+    calendar += `DTSTART:${formatCalendarDate(data.start)}\n`;
+    calendar += `DTEND:${formatCalendarDate(data.end)}\n`;
+    
+    // Optional properties
+    if (data.location) {
+      calendar += `LOCATION:${data.location}\n`;
+    }
+    
+    if (data.description) {
+      calendar += `DESCRIPTION:${data.description}\n`;
+    }
+    
+    calendar += 'END:VEVENT\nEND:VCALENDAR';
+    return calendar;
+  };
+  
+  // Helper function to format date for calendar events
+  const formatCalendarDate = (dateString: string): string => {
+    // Convert from yyyy-MM-ddThh:mm to yyyyMMddThhmmssZ format
+    try {
+      const date = new Date(dateString);
+      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    } catch (e) {
+      return dateString.replace(/[-:]/g, '');
+    }
   };
 
   const generateSingleQrCode = async () => {
@@ -307,6 +477,144 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         qrContent = createVCardData(vCardData);
         displayContent = `${vCardData.firstName} ${vCardData.lastName}`;
         break;
+        
+      case 'wifi':
+        if (!wifiData.ssid) {
+          toast({
+            title: "Network Name (SSID) Required",
+            description: "Please enter the WiFi network name.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        if (wifiData.encryption !== 'nopass' && !wifiData.password) {
+          toast({
+            title: "Password Required",
+            description: "Please enter the WiFi password or select 'No Password' encryption.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        qrContent = createWifiData(wifiData);
+        displayContent = wifiData.ssid;
+        break;
+        
+      case 'sms':
+        if (!smsData.phoneNumber) {
+          toast({
+            title: "Phone Number Required",
+            description: "Please enter a phone number for the SMS.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        if (!validatePhoneNumber(smsData.phoneNumber)) {
+          toast({
+            title: "Invalid Phone Number",
+            description: "Please enter a valid phone number with country code (e.g., +12025550123)",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        qrContent = createSmsData(smsData);
+        displayContent = smsData.phoneNumber;
+        break;
+        
+      case 'geo':
+        if (!geoData.latitude || !geoData.longitude) {
+          toast({
+            title: "Coordinates Required",
+            description: "Please enter both latitude and longitude.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        // Basic validation for latitude (-90 to 90) and longitude (-180 to 180)
+        const lat = parseFloat(geoData.latitude);
+        const lng = parseFloat(geoData.longitude);
+        
+        if (isNaN(lat) || lat < -90 || lat > 90) {
+          toast({
+            title: "Invalid Latitude",
+            description: "Latitude must be a number between -90 and 90.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        if (isNaN(lng) || lng < -180 || lng > 180) {
+          toast({
+            title: "Invalid Longitude",
+            description: "Longitude must be a number between -180 and 180.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        qrContent = createGeoData(geoData);
+        displayContent = `${geoData.latitude},${geoData.longitude}`;
+        break;
+        
+      case 'calendar':
+        if (!calendarData.summary) {
+          toast({
+            title: "Event Title Required",
+            description: "Please enter a title for the event.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        if (!calendarData.start || !calendarData.end) {
+          toast({
+            title: "Event Dates Required",
+            description: "Please enter both start and end dates for the event.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        // Check that end date is after start date
+        const startDate = new Date(calendarData.start);
+        const endDate = new Date(calendarData.end);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          toast({
+            title: "Invalid Dates",
+            description: "Please enter valid dates in the format YYYY-MM-DDTHH:MM.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        if (endDate < startDate) {
+          toast({
+            title: "Invalid Date Range",
+            description: "End date must be after start date.",
+            variant: "destructive"
+          });
+          valid = false;
+          break;
+        }
+        
+        qrContent = createCalendarData(calendarData);
+        displayContent = calendarData.summary;
+        break;
     }
     
     if (!valid) return;
@@ -355,9 +663,9 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         
       case 'phone':
         // Use last 4 digits of phone number if available
-        const digits = phoneNumber.replace(/\D/g, '');
-        const last4 = digits.length > 4 ? digits.slice(-4) : digits;
-        filename = `phone-${last4}`;
+        const phoneDigits = phoneNumber.replace(/\D/g, '');
+        const phoneLast4 = phoneDigits.length > 4 ? phoneDigits.slice(-4) : phoneDigits;
+        filename = `phone-${phoneLast4}`;
         break;
         
       case 'email':
@@ -369,6 +677,32 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
       case 'vcard':
         // Use person's name for filename
         filename = `vcard-${vCardData.firstName.toLowerCase()}-${vCardData.lastName.toLowerCase()}`;
+        break;
+        
+      case 'wifi':
+        // Use network name for filename
+        const networkName = wifiData.ssid.replace(/\s+/g, '-').toLowerCase();
+        filename = `wifi-${networkName}`;
+        break;
+        
+      case 'sms':
+        // Use phone number for filename
+        const smsDigits = smsData.phoneNumber.replace(/\D/g, '');
+        const smsLast4 = smsDigits.length > 4 ? smsDigits.slice(-4) : smsDigits;
+        filename = `sms-${smsLast4}`;
+        break;
+        
+      case 'geo':
+        // Use coordinates for filename
+        const latCoord = parseFloat(geoData.latitude).toFixed(2);
+        const lngCoord = parseFloat(geoData.longitude).toFixed(2);
+        filename = `geo-${latCoord}_${lngCoord}`;
+        break;
+        
+      case 'calendar':
+        // Use event name for filename
+        const eventName = calendarData.summary.replace(/\s+/g, '-').toLowerCase();
+        filename = `calendar-${eventName}`;
         break;
         
       default:
@@ -396,6 +730,7 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
             <div className="space-y-2">
               <Label htmlFor="qr-type" className="text-sm font-medium text-gray-700">QR Code Type</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* First row of QR code types */}
                 <Button
                   type="button"
                   variant={qrCodeType === 'url' ? 'default' : 'outline'}
@@ -427,6 +762,40 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                   onClick={() => setQrCodeType('vcard')}
                 >
                   <User className="h-4 w-4 mr-2" /> vCard
+                </Button>
+                
+                {/* Second row of QR code types */}
+                <Button
+                  type="button"
+                  variant={qrCodeType === 'wifi' ? 'default' : 'outline'}
+                  className={qrCodeType === 'wifi' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-gray-100'}
+                  onClick={() => setQrCodeType('wifi')}
+                >
+                  <Wifi className="h-4 w-4 mr-2" /> WiFi
+                </Button>
+                <Button
+                  type="button"
+                  variant={qrCodeType === 'sms' ? 'default' : 'outline'}
+                  className={qrCodeType === 'sms' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-gray-100'}
+                  onClick={() => setQrCodeType('sms')}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" /> SMS
+                </Button>
+                <Button
+                  type="button"
+                  variant={qrCodeType === 'geo' ? 'default' : 'outline'}
+                  className={qrCodeType === 'geo' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-gray-100'}
+                  onClick={() => setQrCodeType('geo')}
+                >
+                  <MapPin className="h-4 w-4 mr-2" /> Location
+                </Button>
+                <Button
+                  type="button"
+                  variant={qrCodeType === 'calendar' ? 'default' : 'outline'}
+                  className={qrCodeType === 'calendar' ? 'bg-blue-600 hover:bg-blue-700' : 'hover:bg-gray-100'}
+                  onClick={() => setQrCodeType('calendar')}
+                >
+                  <Calendar className="h-4 w-4 mr-2" /> Event
                 </Button>
               </div>
             </div>
