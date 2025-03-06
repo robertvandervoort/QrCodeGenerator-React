@@ -337,7 +337,7 @@ const Generate = ({
                         variant={currentPage === i + 1 ? "default" : "outline"}
                         size="sm"
                         onClick={() => paginate(i + 1)}
-                        className="w-8 h-8 p-0"
+                        className={`w-8 h-8 p-0 ${currentPage !== i + 1 ? 'hover:bg-blue-100' : 'bg-blue-600 text-white'}`}
                       >
                         {i + 1}
                       </Button>
@@ -350,7 +350,7 @@ const Generate = ({
                           variant={currentPage === Math.ceil(generatedQrCodes.length / codesPerPage) ? "default" : "outline"}
                           size="sm"
                           onClick={() => paginate(Math.ceil(generatedQrCodes.length / codesPerPage))}
-                          className="w-8 h-8 p-0"
+                          className={`w-8 h-8 p-0 ${currentPage !== Math.ceil(generatedQrCodes.length / codesPerPage) ? 'hover:bg-blue-100' : 'bg-blue-600 text-white'}`}
                         >
                           {Math.ceil(generatedQrCodes.length / codesPerPage)}
                         </Button>
@@ -363,7 +363,7 @@ const Generate = ({
                     size="sm"
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === Math.ceil(generatedQrCodes.length / codesPerPage)}
-                    className="inline-flex items-center"
+                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
