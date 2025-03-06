@@ -338,7 +338,45 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     if (!generatedQrCode) return;
 
     const link = document.createElement('a');
-    link.download = `qrcode-${new Date().getTime()}.${format}`;
+    // Create a meaningful filename based on QR code type
+    let filename = '';
+    
+    switch (qrCodeType) {
+      case 'url':
+        // Extract domain from URL for filename
+        try {
+          const urlObj = new URL(url);
+          const domain = urlObj.hostname.replace('www.', '');
+          filename = `url-${domain}`;
+        } catch {
+          filename = 'url-qrcode';
+        }
+        break;
+        
+      case 'phone':
+        // Use last 4 digits of phone number if available
+        const digits = phoneNumber.replace(/\D/g, '');
+        const last4 = digits.length > 4 ? digits.slice(-4) : digits;
+        filename = `phone-${last4}`;
+        break;
+        
+      case 'email':
+        // Use email username for filename
+        const emailPrefix = emailData.email.split('@')[0] || 'email';
+        filename = `email-${emailPrefix}`;
+        break;
+        
+      case 'vcard':
+        // Use person's name for filename
+        filename = `vcard-${vCardData.firstName.toLowerCase()}-${vCardData.lastName.toLowerCase()}`;
+        break;
+        
+      default:
+        filename = 'qrcode';
+    }
+    
+    // Add timestamp and format
+    link.download = `${filename}-${new Date().getTime()}.${format}`;
     link.href = generatedQrCode;
     link.click();
   };
@@ -729,7 +767,10 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
               onClick={generateSingleQrCode} 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Generate QR Code
+              {qrCodeType === 'url' && <><Link className="h-4 w-4 mr-2" /> Generate URL QR Code</>}
+              {qrCodeType === 'phone' && <><Phone className="h-4 w-4 mr-2" /> Generate Phone QR Code</>}
+              {qrCodeType === 'email' && <><Mail className="h-4 w-4 mr-2" /> Generate Email QR Code</>}
+              {qrCodeType === 'vcard' && <><User className="h-4 w-4 mr-2" /> Generate vCard QR Code</>}
             </Button>
           </div>
         </CardContent>
@@ -767,7 +808,12 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
             <div className="text-center text-gray-400">
               <div className="mb-2 text-6xl">🔍</div>
               <p>Your QR code will appear here</p>
-              <p className="text-sm">Enter a URL and click Generate</p>
+              <p className="text-sm">
+                {qrCodeType === 'url' && 'Enter a URL and click Generate'}
+                {qrCodeType === 'phone' && 'Enter a phone number and click Generate'}
+                {qrCodeType === 'email' && 'Enter an email address and click Generate'}
+                {qrCodeType === 'vcard' && 'Fill in the contact info and click Generate'}
+              </p>
             </div>
           )}
         </CardContent>
