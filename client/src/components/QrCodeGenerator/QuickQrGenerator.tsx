@@ -121,6 +121,14 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
   const [centerImageSize, setCenterImageSize] = useState(20); // Default 20% of QR code size
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // QR Code style settings
+  const [cornerStyle, setCornerStyle] = useState<'square' | 'rounded' | 'extraRounded'>('square');
+  const [cornerRadius, setCornerRadius] = useState(10); // Default 10% radius when rounded
+  const [dotStyle, setDotStyle] = useState<'square' | 'dots' | 'rounded'>('square');
+  const [frameStyle, setFrameStyle] = useState<'none' | 'simple' | 'double'>('none');
+  const [frameColor, setFrameColor] = useState('#000000');
+  const [frameWidth, setFrameWidth] = useState(5); // Default 5% of QR code size
+  
   // URL type data
   const [url, setUrl] = useState('');
   
@@ -649,6 +657,13 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         includeText: includeText ? true : false,
         foregroundColor,
         backgroundColor,
+        // Style options
+        cornerStyle,
+        cornerRadius,
+        dotStyle,
+        frameStyle,
+        frameColor,
+        frameWidth,
         // Add center image if enabled
         ...(useCenterImage && centerImage && {
           centerImage,
