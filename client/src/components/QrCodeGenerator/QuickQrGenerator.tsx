@@ -106,6 +106,13 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
   const [backgroundColor, setBackgroundColor] = useState('#FFFFFF');
   const [generatedQrCode, setGeneratedQrCode] = useState<string | null>(null);
   
+  // Center image settings
+  const [useCenterImage, setUseCenterImage] = useState(false);
+  const [centerImageType, setCenterImageType] = useState<'clipart' | 'custom'>('clipart');
+  const [centerImage, setCenterImage] = useState<string | null>(null);
+  const [centerImageSize, setCenterImageSize] = useState(20); // Default 20% of QR code size
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // URL type data
   const [url, setUrl] = useState('');
   
@@ -632,7 +639,13 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         format,
         includeText: includeText ? true : false,
         foregroundColor,
-        backgroundColor
+        backgroundColor,
+        // Add center image if enabled
+        ...(useCenterImage && centerImage && {
+          centerImage,
+          centerImageSize,
+          centerImageIsClipArt: centerImageType === 'clipart'
+        })
       };
       
       console.log(`Generating ${qrCodeType} QR code:`, { content: qrContent, ...options });
