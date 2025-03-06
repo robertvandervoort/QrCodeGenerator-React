@@ -30,9 +30,10 @@ export const generateQrCode = (
           
           // If text is to be included, add it to SVG
           if (options.includeText) {
-            // Insert text element before closing svg tag
+            const textColor = options.foregroundColor || '#000000';
+            // Insert text element before closing svg tag with matching color
             const svgWithText = svgString.replace('</svg>', 
-              `<text x="${options.size / 2}" y="${options.size + 20}" font-family="Arial" font-size="12" text-anchor="middle">${url}</text></svg>`);
+              `<text x="${options.size / 2}" y="${options.size + 20}" font-family="Arial" font-size="12" text-anchor="middle" fill="${textColor}">${url}</text></svg>`);
             resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgWithText));
           } else {
             resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString));
@@ -80,7 +81,7 @@ export const generateQrCode = (
         if (options.includeText) {
           ctx.font = '12px Arial';
           ctx.textAlign = 'center';
-          ctx.fillStyle = '#000000';
+          ctx.fillStyle = options.foregroundColor || '#000000';
           
           // Truncate URL if too long
           let displayUrl = url;
