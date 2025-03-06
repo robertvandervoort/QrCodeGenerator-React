@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
-import { getClipArtDataUrl, fileToDataUrl } from "../../lib/clipart";
+import { getClipArtDataUrl, fileToDataUrl, qrTypeIcons } from "../../lib/clipart";
 import { 
   Download, Link, Phone, Mail, User, 
   Wifi, MessageSquare, MapPin, Calendar,
@@ -1336,6 +1336,152 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
                   label="Background Color"
                 />
               </div>
+            </div>
+
+            {/* Center Image Options */}
+            <div className="space-y-4 border-t border-gray-200 pt-4 mt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="use-center-image" 
+                  checked={useCenterImage} 
+                  onCheckedChange={(checked) => {
+                    setUseCenterImage(checked === true);
+                    // Reset center image when disabled
+                    if (checked !== true) {
+                      setCenterImage(null);
+                    } else if (!centerImage && centerImageType === 'clipart') {
+                      // Set default clipart for the selected QR code type
+                      setCenterImage(getClipArtDataUrl(qrCodeType, foregroundColor));
+                    }
+                  }}
+                />
+                <Label htmlFor="use-center-image" className="text-sm font-medium text-gray-700">
+                  Add center image to QR code
+                </Label>
+              </div>
+              
+              {useCenterImage && (
+                <div className="space-y-4 pl-6 border-l-2 border-gray-200">
+                  <Tabs defaultValue={centerImageType} onValueChange={(value) => setCenterImageType(value as 'clipart' | 'custom')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="clipart">Use clipart</TabsTrigger>
+                      <TabsTrigger value="custom">Upload image</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="clipart" className="space-y-4 pt-4">
+                      <div className="flex justify-center">
+                        {centerImage && centerImageType === 'clipart' ? (
+                          <div className="relative inline-block">
+                            <img 
+                              src={centerImage} 
+                              alt="Center clipart" 
+                              className="w-20 h-20 border border-gray-300 p-2 rounded-md"
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                              onClick={() => setCenterImage(null)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            onClick={() => setCenterImage(getClipArtDataUrl(qrCodeType, foregroundColor))}
+                          >
+                            <Image className="h-4 w-4 mr-2" />
+                            Use {qrCodeType} icon
+                          </Button>
+                        )}
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="custom" className="space-y-4 pt-4">
+                      <div className="flex justify-center">
+                        {centerImage && centerImageType === 'custom' ? (
+                          <div className="relative inline-block">
+                            <img 
+                              src={centerImage} 
+                              alt="Custom center image" 
+                              className="max-w-[120px] max-h-[120px] border border-gray-300 p-2 rounded-md"
+                            />
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                              onClick={() => setCenterImage(null)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const dataUrl = await fileToDataUrl(file);
+                                    setCenterImage(dataUrl);
+                                  } catch (error) {
+                                    console.error("Error loading image:", error);
+                                    toast({
+                                      title: "Error loading image",
+                                      description: "Please try another image file",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }
+                              }}
+                            />
+                            <Button 
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              <Image className="h-4 w-4 mr-2" />
+                              Upload image
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-center text-gray-500">
+                        Recommended: Square PNG or JPG with transparent background
+                      </p>
+                    </TabsContent>
+                  </Tabs>
+                  
+                  {centerImage && (
+                    <div className="space-y-2">
+                      <Label htmlFor="center-image-size" className="text-sm font-medium text-gray-700">Image Size (%)</Label>
+                      <div className="flex space-x-4 items-center">
+                        <div className="flex-1">
+                          <Slider
+                            id="center-image-size"
+                            min={5}
+                            max={30}
+                            step={1}
+                            value={[centerImageSize]}
+                            onValueChange={(value) => setCenterImageSize(value[0])}
+                          />
+                        </div>
+                        <div className="w-16">
+                          <Input
+                            type="number"
+                            value={centerImageSize}
+                            min={5}
+                            max={30}
+                            onChange={(e) => setCenterImageSize(parseInt(e.target.value) || 20)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Include Text Toggle */}
