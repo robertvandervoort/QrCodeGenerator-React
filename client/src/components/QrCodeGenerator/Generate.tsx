@@ -66,23 +66,23 @@ const Generate = ({
     logDebug('app', `Changed to page ${pageNumber}`);
   };
 
-  // Start generating QR codes when component mounts
+  // Start generating QR codes when component mounts or when configuration changes
   useEffect(() => {
-    if (previewData.length > 0 && selectedUrlColumn && generatedQrCodes.length === 0 && !isGenerating) {
+    if (previewData.length > 0 && selectedUrlColumn && !isGenerating) {
+      // If this is the first time generating or if configuration has changed, regenerate QR codes
       generateQrCodes();
+      logDebug('generation', 'Generating QR codes due to configuration change or initial load');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Regenerate QR codes when options change (after initial generation)
-  useEffect(() => {
-    // Only regenerate if we already have generated QR codes and are not currently generating
-    if (previewData.length > 0 && selectedUrlColumn && generatedQrCodes.length > 0 && !isGenerating) {
-      logDebug('generation', 'QR options changed, regenerating QR codes');
-      generateQrCodes();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrOptions]);
+  }, [
+    // Dependencies that should trigger regeneration:
+    qrOptions, 
+    selectedUrlColumn, 
+    selectedFilenameColumns, 
+    filenameSeparator, 
+    separatorType, 
+    customSeparator
+  ]);
 
   const generateQrCodes = async () => {
     setIsGenerating(true);
