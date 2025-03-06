@@ -15,6 +15,7 @@ interface QuickQrGeneratorProps {
 
 // Import already exists above
 import { ColorPicker } from "../ui/ColorPicker";
+import { generateQrCode } from "../../lib/qrCodeGenerator";
 
 const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
   const { toast } = useToast();
@@ -45,8 +46,6 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     // Basic URL validation - must start with http:// or https://
     return !!url.match(/^https?:\/\//i);
   };
-
-  import { generateQrCode } from "../../lib/qrCodeGenerator";
 
   const generateSingleQrCode = async () => {
     if (!url) {
