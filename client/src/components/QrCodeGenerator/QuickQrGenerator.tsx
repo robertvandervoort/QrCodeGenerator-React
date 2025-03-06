@@ -101,7 +101,7 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Quick QR Code Generator</CardTitle>
+          <CardTitle className="text-2xl text-blue-600">Quick QR Code Generator</CardTitle>
           <CardDescription>
             Generate a single QR code instantly from any URL
           </CardDescription>
@@ -210,18 +210,25 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
 
             <Button 
               onClick={generateSingleQrCode} 
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             >
               Generate QR Code
             </Button>
           </div>
         </CardContent>
         <CardFooter className="justify-between">
-          <Button variant="outline" onClick={showBatchOptions}>
+          <Button 
+            variant="outline" 
+            onClick={showBatchOptions}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
             Need to generate multiple QR codes?
           </Button>
           {generatedQrCode && (
-            <Button variant="secondary" onClick={downloadQrCode}>
+            <Button 
+              onClick={downloadQrCode}
+              className="inline-flex items-center bg-green-500 hover:bg-green-600 text-black font-bold"
+            >
               <Download className="h-4 w-4 mr-2" /> Download
             </Button>
           )}
