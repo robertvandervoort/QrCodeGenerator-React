@@ -1,4 +1,3 @@
-
 import QRCode from 'qrcode';
 
 // Define QrCodeOptions interface here to avoid circular imports
@@ -14,53 +13,31 @@ interface QrCodeOptions {
   centerImageIsClipArt?: boolean; // Whether the center image is clip art
 }
 
-/**
- * Generate a QR code as a data URL
- */
-export const generateQrCode = async (text: string, options: QrCodeOptions, displayText?: string): Promise<string> => {
-  const opts: QRCode.QRCodeToDataURLOptions = {
-    width: options.size,
-    margin: options.margin,
-    type: options.format as 'image/png' | 'image/jpeg' | 'image/webp',
-    color: {
-      dark: options.foregroundColor || '#000000',
-      light: options.backgroundColor || '#FFFFFF'
-    }
-  };
-
-  try {
-    // Generate QR code
-    let qrCodeDataUrl = await QRCode.toDataURL(text, opts)
-      .catch(err => {
-        console.error('Error in QRCode.toDataURL:', err);
-        throw new Error('Failed to generate QR code: ' + err.message);
-      });
-    
-    // If there's a center image, add it to the QR code
-    if (options.centerImage) {
-      try {
-        qrCodeDataUrl = await addCenterImageToQrCode(qrCodeDataUrl, options.centerImage, options);
-      } catch (centerImgErr) {
-        console.error('Error adding center image:', centerImgErr);
-        // Continue with the QR code without center image if there's an error
-      }
-    }
-    
-    // If includeText is true, create a new canvas with the QR code and text
-    if (options.includeText) {
-      try {
-        return await addTextToQrCode(qrCodeDataUrl, displayText || text, options);
-      } catch (textErr) {
-        console.error('Error adding text to QR code:', textErr);
-        // Return QR code without text if there's an error
-        return qrCodeDataUrl;
-      }
-    }
-    
-    return qrCodeDataUrl;
-  } catch (err) {
-    console.error('Error generating QR code:', err);
-    throw new Error('Failed to generate QR code: ' + (err instanceof Error ? err.message : String(err)));
+// Helper function to draw a rounded rectangle
+const roundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) => {
+  if (typeof ctx.roundRect === 'function') {
+    // Use native roundRect if available
+    ctx.roundRect(x, y, width, height, radius);
+  } else {
+    // Fallback implementation for browsers without native roundRect
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
   }
 };
 
@@ -96,7 +73,9 @@ const addCenterImageToQrCode = (qrCodeDataUrl: string, centerImageUrl: string, o
             ctx.drawImage(qrImage, 0, 0);
             
             // Calculate center image size (as percentage of QR code)
-            const centerImgSize = Math.min(Math.max(options.centerImageSize || 20, 1), 30) / 100 * qrImage.width;
+            // Limit size to be smaller for better QR code compatibility - max 25% of total size
+            const centerImgSizePercent = Math.min(Math.max(options.centerImageSize || 20, 1), 25);
+            const centerImgSize = centerImgSizePercent / 100 * qrImage.width;
             
             // Load center image
             centerImage.onload = () => {
@@ -105,16 +84,29 @@ const addCenterImageToQrCode = (qrCodeDataUrl: string, centerImageUrl: string, o
                 const centerX = (qrImage.width - centerImgSize) / 2;
                 const centerY = (qrImage.height - centerImgSize) / 2;
                 
-                if (options.centerImageIsClipArt) {
-                  // For clip art, draw a white circular background
-                  ctx.fillStyle = '#FFFFFF';
+                // Always draw a white background for the center image for better scanability
+                ctx.fillStyle = '#FFFFFF';
+                
+                // For clipart or small images, use a circular background
+                if (options.centerImageIsClipArt || centerImgSizePercent < 15) {
+                  // Draw white circle background slightly larger than the image
                   ctx.beginPath();
                   ctx.arc(qrImage.width/2, qrImage.height/2, centerImgSize * 0.6, 0, Math.PI * 2);
                   ctx.fill();
+                } else {
+                  // For larger images, use a rounded rect background
+                  const padding = centerImgSize * 0.1;
+                  const radius = centerImgSize * 0.15;
+                  roundRect(ctx, centerX - padding, centerY - padding, 
+                           centerImgSize + (padding * 2), centerImgSize + (padding * 2), radius);
+                  ctx.fill();
                 }
                 
-                // Draw the center image
-                ctx.drawImage(centerImage, centerX, centerY, centerImgSize, centerImgSize);
+                // Draw the center image - make it slightly smaller than the background
+                const imageDrawSize = options.centerImageIsClipArt ? centerImgSize : centerImgSize * 0.95;
+                const adjustedX = (qrImage.width - imageDrawSize) / 2;
+                const adjustedY = (qrImage.height - imageDrawSize) / 2;
+                ctx.drawImage(centerImage, adjustedX, adjustedY, imageDrawSize, imageDrawSize);
                 
                 // Convert to data URL
                 const dataUrl = canvas.toDataURL(`image/${options.format}` || 'image/png');
@@ -211,4 +203,56 @@ const addTextToQrCode = (qrCodeDataUrl: string, text: string, options: QrCodeOpt
       resolve(qrCodeDataUrl); // Fallback to original QR code
     }
   });
+};
+
+/**
+ * Generate a QR code as a data URL
+ */
+export const generateQrCode = async (text: string, options: QrCodeOptions, displayText?: string): Promise<string> => {
+  // When using center images, increase error correction level to 'H' (high)
+  const opts: QRCode.QRCodeToDataURLOptions = {
+    width: options.size,
+    margin: options.margin,
+    type: options.format as 'image/png' | 'image/jpeg' | 'image/webp',
+    errorCorrectionLevel: options.centerImage ? 'H' : 'M', // Use high error correction when center image is used
+    color: {
+      dark: options.foregroundColor || '#000000',
+      light: options.backgroundColor || '#FFFFFF'
+    }
+  };
+
+  try {
+    // Generate QR code
+    let qrCodeDataUrl = await QRCode.toDataURL(text, opts)
+      .catch(err => {
+        console.error('Error in QRCode.toDataURL:', err);
+        throw new Error('Failed to generate QR code: ' + err.message);
+      });
+    
+    // If there's a center image, add it to the QR code
+    if (options.centerImage) {
+      try {
+        qrCodeDataUrl = await addCenterImageToQrCode(qrCodeDataUrl, options.centerImage, options);
+      } catch (centerImgErr) {
+        console.error('Error adding center image:', centerImgErr);
+        // Continue with the QR code without center image if there's an error
+      }
+    }
+    
+    // If includeText is true, create a new canvas with the QR code and text
+    if (options.includeText) {
+      try {
+        return await addTextToQrCode(qrCodeDataUrl, displayText || text, options);
+      } catch (textErr) {
+        console.error('Error adding text to QR code:', textErr);
+        // Return QR code without text if there's an error
+        return qrCodeDataUrl;
+      }
+    }
+    
+    return qrCodeDataUrl;
+  } catch (err) {
+    console.error('Error generating QR code:', err);
+    throw new Error('Failed to generate QR code: ' + (err instanceof Error ? err.message : String(err)));
+  }
 };
