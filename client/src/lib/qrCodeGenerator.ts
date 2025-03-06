@@ -270,10 +270,10 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
           
           // Only apply dot styling if requested
           if (options.dotStyle && options.dotStyle !== 'square') {
-            // We need to completely redraw the QR code with dot styling
-            // This approach solves the partial redraw problem
+            // START FROM SCRATCH for dot styling to avoid any issues
+            // This completely wipes the canvas and redraws everything
             
-            // First, get the QR code data pattern (we need to know which modules are dark/light)
+            // First, create a temporary canvas to store the original QR code pattern
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
             
@@ -284,38 +284,53 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
               tempCanvas.width = canvas.width;
               tempCanvas.height = canvas.height;
               
-              // Draw the QR code onto the temp canvas
+              // Draw the original QR code onto the temp canvas
               tempCtx.drawImage(currentQrImage, 0, 0);
               
               // Get the pixel data to detect the QR code pattern
               const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
               const pixelData = imageData.data;
               
-              // Now clear our main canvas and redraw the background
-              ctx.fillStyle = options.backgroundColor || '#FFFFFF';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              // Create a NEW canvas for our styled QR code - this ensures no residual artifacts
+              const newCanvas = document.createElement('canvas');
+              const newCtx = newCanvas.getContext('2d');
+              
+              if (!newCtx) {
+                console.warn('Could not create new canvas for dot styling');
+                return;
+              }
+              
+              newCanvas.width = canvas.width;
+              newCanvas.height = canvas.height;
+              
+              // Start with a clean background
+              newCtx.fillStyle = options.backgroundColor || '#FFFFFF';
+              newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
               
               // QR code is black and white, so we can use a simple threshold
               const threshold = 128;
               const isLightPixel = (r: number, g: number, b: number) => (r + g + b) / 3 > threshold;
               
-              // Define dot characteristics based on the module size
-              const dotSize = moduleEstimate * 0.85; // Slightly smaller than a module
-              
-              // Check if the point is inside any finder pattern box
+              // Check if the point is inside any finder pattern box (with larger margin)
               const isInFinderArea = (x: number, y: number) => {
-                return finderPositions.some(([fx, fy, fw, fh]) => 
-                  x >= fx && x <= fx + fw && y >= fy && y <= fy + fh
-                );
+                return finderPositions.some(([fx, fy, fw, fh]) => {
+                  // Add a safety margin around finder patterns
+                  const safetyMargin = moduleEstimate;
+                  return x >= fx - safetyMargin && 
+                         x <= fx + fw + safetyMargin && 
+                         y >= fy - safetyMargin && 
+                         y <= fy + fw + safetyMargin;
+                });
               };
               
               // Draw the QR code with the selected dot style
-              // Use a fixed grid spacing for consistency
+              // Use a fixed grid spacing for consistency that approximates the QR modules
               const gridSize = Math.floor(canvas.width / 25); // This creates a reasonable grid
               
-              for (let y = 0; y < canvas.height; y += gridSize) {
-                for (let x = 0; x < canvas.width; x += gridSize) {
-                  // Skip if in a finder pattern area
+              // Process the entire image, skipping finder pattern areas
+              for (let y = 0; y < newCanvas.height; y += gridSize) {
+                for (let x = 0; x < newCanvas.width; x += gridSize) {
+                  // Skip finder pattern areas - these will be drawn separately
                   if (isInFinderArea(x, y)) continue;
                   
                   // Sample the center of each grid cell
@@ -323,47 +338,51 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
                   const sampleY = Math.floor(y + gridSize / 2);
                   
                   // Skip if out of bounds
-                  if (sampleX >= canvas.width || sampleY >= canvas.height) continue;
+                  if (sampleX >= tempCanvas.width || sampleY >= tempCanvas.height) continue;
                   
-                  // Get pixel color at the sample point
-                  const pixelIndex = (sampleY * canvas.width + sampleX) * 4;
+                  // Get pixel color at the sample point from the original QR code
+                  const pixelIndex = (sampleY * tempCanvas.width + sampleX) * 4;
                   const r = pixelData[pixelIndex];
                   const g = pixelData[pixelIndex + 1];
                   const b = pixelData[pixelIndex + 2];
                   
                   // If it's a dark pixel (part of the QR code)
                   if (!isLightPixel(r, g, b)) {
-                    ctx.fillStyle = options.foregroundColor || '#000000';
+                    newCtx.fillStyle = options.foregroundColor || '#000000';
                     
                     if (options.dotStyle === 'dots') {
                       // Circular dots - ensure they're big enough for scanning
                       const radius = gridSize * 0.45;
-                      ctx.beginPath();
-                      ctx.arc(
+                      newCtx.beginPath();
+                      newCtx.arc(
                         x + gridSize / 2,
                         y + gridSize / 2,
                         radius,
                         0,
                         Math.PI * 2
                       );
-                      ctx.fill();
+                      newCtx.fill();
                     } else if (options.dotStyle === 'rounded') {
                       // Rounded square modules
                       const cornerRadius = gridSize / 5;
-                      ctx.beginPath();
+                      newCtx.beginPath();
                       roundRect(
-                        ctx,
+                        newCtx,
                         x + gridSize * 0.1,
                         y + gridSize * 0.1,
                         gridSize * 0.8,
                         gridSize * 0.8,
                         cornerRadius
                       );
-                      ctx.fill();
+                      newCtx.fill();
                     }
                   }
                 }
               }
+              
+              // Copy the new canvas to our main canvas
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(newCanvas, 0, 0);
             }
           }
           
