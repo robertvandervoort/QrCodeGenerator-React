@@ -13,7 +13,7 @@ interface QuickQrGeneratorProps {
   showBatchOptions: () => void;
 }
 
-import { QrCodeOptions } from "../../../shared/types";
+// Import already exists above
 import { ColorPicker } from "../ui/ColorPicker";
 
 const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
