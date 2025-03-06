@@ -77,9 +77,11 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
         backgroundColor
       };
       
+      console.log("Generating QR code with options:", { url, includeText, ...options });
       const qrCodeDataUrl = await generateQrCode(url, options);
       setGeneratedQrCode(qrCodeDataUrl);
     } catch (error) {
+      console.error("Error generating QR code:", error);
       toast({
         title: "Error generating QR code",
         description: "Please try again with a valid URL",
