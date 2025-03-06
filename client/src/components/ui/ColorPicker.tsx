@@ -42,18 +42,12 @@ const ColorPicker = ({ color, onChange, label }: ColorPickerProps) => {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <div className="flex items-center gap-2">
+      <div>
         <input
           type="color"
           value={inputColor}
           onChange={handleColorPickerChange}
-          className="h-10 w-20 cursor-pointer"
-        />
-        <Input
-          value={inputColor}
-          onChange={handleHexChange}
-          placeholder="#000000"
-          className="flex-1"
+          className="h-10 w-full cursor-pointer"
         />
       </div>
     </div>
