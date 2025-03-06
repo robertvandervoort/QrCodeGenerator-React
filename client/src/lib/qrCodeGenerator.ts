@@ -14,7 +14,7 @@ interface QrCodeOptions {
 /**
  * Generate a QR code as a data URL
  */
-export const generateQrCode = async (text: string, options: QrCodeOptions): Promise<string> => {
+export const generateQrCode = async (text: string, options: QrCodeOptions, displayText?: string): Promise<string> => {
   const opts: QRCode.QRCodeToDataURLOptions = {
     width: options.size,
     margin: options.margin,
@@ -31,7 +31,7 @@ export const generateQrCode = async (text: string, options: QrCodeOptions): Prom
     
     // If includeText is true, create a new canvas with the QR code and text
     if (options.includeText) {
-      return addTextToQrCode(qrCodeDataUrl, text, options);
+      return addTextToQrCode(qrCodeDataUrl, displayText || text, options);
     }
     
     return qrCodeDataUrl;
