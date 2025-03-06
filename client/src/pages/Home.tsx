@@ -25,6 +25,8 @@ export type QrCodeOptions = {
   margin: number;
   format: string;
   includeText: boolean;
+  foregroundColor?: string;
+  backgroundColor?: string;
 };
 
 export type GeneratedQrCode = {
@@ -56,7 +58,9 @@ const Home = () => {
     size: 900, // Default size for print applications
     margin: 4,
     format: "png",
-    includeText: true
+    includeText: true,
+    foregroundColor: "#000000",
+    backgroundColor: "#FFFFFF"
   });
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [generatedQrCodes, setGeneratedQrCodes] = useState<GeneratedQrCode[]>([]);

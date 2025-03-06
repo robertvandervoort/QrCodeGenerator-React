@@ -17,7 +17,11 @@ export const generateQrCode = (
           type: 'svg',
           width: options.size,
           margin: options.margin,
-          errorCorrectionLevel: 'H'
+          errorCorrectionLevel: 'H',
+          color: {
+            dark: options.foregroundColor || '#000000',
+            light: options.backgroundColor || '#FFFFFF'
+          }
         }, (err, svgString) => {
           if (err) {
             reject(err);
@@ -53,8 +57,8 @@ export const generateQrCode = (
       canvas.width = size;
       canvas.height = totalHeight;
       
-      // Fill background
-      ctx.fillStyle = 'white';
+      // Fill background with specified color
+      ctx.fillStyle = options.backgroundColor || '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Generate QR code directly to canvas
@@ -62,8 +66,8 @@ export const generateQrCode = (
         width: size,
         margin: options.margin,
         color: {
-          dark: '#000000',
-          light: '#ffffff'
+          dark: options.foregroundColor || '#000000',
+          light: options.backgroundColor || '#FFFFFF'
         },
         errorCorrectionLevel: 'H'
       }, (err) => {

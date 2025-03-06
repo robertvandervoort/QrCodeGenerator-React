@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { CheckCircle } from "lucide-react";
 import { detectUrlColumns } from "@/utils/fileProcessors";
 
@@ -292,6 +293,24 @@ const Configure = ({
               <Label htmlFor="include-url" className="text-sm text-gray-700">
                 Include URL text below QR code
               </Label>
+            </div>
+            
+            {/* Color options */}
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <ColorPicker
+                  color={qrOptions.foregroundColor || "#000000"}
+                  onChange={(color) => handleQrOptionChange('foregroundColor', color)}
+                  label="QR Code Color"
+                />
+              </div>
+              <div>
+                <ColorPicker
+                  color={qrOptions.backgroundColor || "#FFFFFF"}
+                  onChange={(color) => handleQrOptionChange('backgroundColor', color)}
+                  label="Background Color"
+                />
+              </div>
             </div>
           </div>
           
