@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { ColorPicker } from "@/components/ui/ColorPicker";
@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
+import { getClipArtDataUrl, fileToDataUrl } from "../../lib/clipart";
 import { 
   Download, Link, Phone, Mail, User, 
-  Wifi, MessageSquare, MapPin, Calendar 
+  Wifi, MessageSquare, MapPin, Calendar,
+  Image, X
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +25,9 @@ interface QrCodeOptions {
   includeText?: boolean;
   foregroundColor?: string;
   backgroundColor?: string;
+  centerImage?: string; // Data URL for center image
+  centerImageSize?: number; // Size of center image as percentage of QR code (1-30)
+  centerImageIsClipArt?: boolean; // Whether the center image is clip art
 }
 
 interface QuickQrGeneratorProps {

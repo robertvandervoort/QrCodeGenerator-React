@@ -9,6 +9,9 @@ interface QrCodeOptions {
   includeText?: boolean;
   foregroundColor?: string;
   backgroundColor?: string;
+  centerImage?: string; // Data URL for center image
+  centerImageSize?: number; // Size of center image as percentage of QR code (1-30)
+  centerImageIsClipArt?: boolean; // Whether the center image is clip art
 }
 
 /**
@@ -27,7 +30,12 @@ export const generateQrCode = async (text: string, options: QrCodeOptions, displ
 
   try {
     // Generate QR code
-    const qrCodeDataUrl = await QRCode.toDataURL(text, opts);
+    let qrCodeDataUrl = await QRCode.toDataURL(text, opts);
+    
+    // If there's a center image, add it to the QR code
+    if (options.centerImage) {
+      qrCodeDataUrl = await addCenterImageToQrCode(qrCodeDataUrl, options.centerImage, options);
+    }
     
     // If includeText is true, create a new canvas with the QR code and text
     if (options.includeText) {
@@ -39,6 +47,59 @@ export const generateQrCode = async (text: string, options: QrCodeOptions, displ
     console.error('Error generating QR code:', err);
     throw new Error('Failed to generate QR code');
   }
+};
+
+/**
+ * Add a center image to the QR code
+ */
+const addCenterImageToQrCode = (qrCodeDataUrl: string, centerImageUrl: string, options: QrCodeOptions): Promise<string> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const qrImage = new Image();
+    const centerImage = new Image();
+    
+    qrImage.onload = () => {
+      canvas.width = qrImage.width;
+      canvas.height = qrImage.height;
+      
+      if (ctx) {
+        // Draw the QR code first
+        ctx.drawImage(qrImage, 0, 0);
+        
+        // Calculate center image size (as percentage of QR code)
+        const centerImgSize = Math.min(Math.max(options.centerImageSize || 20, 1), 30) / 100 * qrImage.width;
+        
+        // Load center image
+        centerImage.onload = () => {
+          // Calculate position for center image
+          const centerX = (qrImage.width - centerImgSize) / 2;
+          const centerY = (qrImage.height - centerImgSize) / 2;
+          
+          if (options.centerImageIsClipArt) {
+            // For clip art, draw a white circular background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(qrImage.width/2, qrImage.height/2, centerImgSize * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // Draw the center image
+          ctx.drawImage(centerImage, centerX, centerY, centerImgSize, centerImgSize);
+          
+          // Convert to data URL
+          resolve(canvas.toDataURL(`image/${options.format}` || 'image/png'));
+        };
+        
+        centerImage.src = centerImageUrl;
+      } else {
+        // Fallback if context not available
+        resolve(qrCodeDataUrl);
+      }
+    };
+    
+    qrImage.src = qrCodeDataUrl;
+  });
 };
 
 /**
