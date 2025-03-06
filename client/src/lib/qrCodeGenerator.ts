@@ -84,12 +84,12 @@ const addCenterImageToQrCode = (qrCodeDataUrl: string, centerImageUrl: string, o
                 const centerX = (qrImage.width - centerImgSize) / 2;
                 const centerY = (qrImage.height - centerImgSize) / 2;
                 
-                // Always draw a white background for the center image for better scanability
-                ctx.fillStyle = '#FFFFFF';
+                // Use the chosen background color for the center image background
+                ctx.fillStyle = options.backgroundColor || '#FFFFFF';
                 
                 // For clipart or small images, use a circular background
                 if (options.centerImageIsClipArt || centerImgSizePercent < 15) {
-                  // Draw white circle background slightly larger than the image
+                  // Draw circle background slightly larger than the image
                   ctx.beginPath();
                   ctx.arc(qrImage.width/2, qrImage.height/2, centerImgSize * 0.6, 0, Math.PI * 2);
                   ctx.fill();
