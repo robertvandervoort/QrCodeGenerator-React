@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { ColorPicker } from "@/components/ui/color-picker";
+import { ColorPicker } from "@/components/ui/ColorPicker";
 import { generateQrCode } from "../../lib/qrCodeGenerator";
 import { Download } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
