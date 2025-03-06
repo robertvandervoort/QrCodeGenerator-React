@@ -237,8 +237,7 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
       // Define helper function for dot and corner styling
       const applyDotAndCornerStyling = (currentQrImage: HTMLImageElement) => {
         try {
-          // For dot and corner styling, we'll take a different approach
-          // Instead of redrawing the entire QR code, we'll apply selective styling to make it scannable
+          // We'll create a fresh QR code with advanced styling
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d', { willReadFrequently: true });
           
@@ -250,15 +249,19 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
           canvas.width = currentQrImage.width;
           canvas.height = currentQrImage.height;
           
+          // Fill with background color first
+          ctx.fillStyle = options.backgroundColor || '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
           // Draw the original QR code as the base
           ctx.drawImage(currentQrImage, 0, 0);
           
-          // First, identify the corners to not modify with dot styling
+          // First, identify the corner finder patterns that need special handling
           const moduleEstimate = Math.floor(currentQrImage.width / 25); // Approximate module size
           const finderSize = moduleEstimate * 7; // Finder patterns are 7x7 modules
           const padding = moduleEstimate / 2; // Add padding to ensure we find full finders
           
-          // The finder pattern positions (to be excluded from dot styling)
+          // Store finder pattern positions (to be excluded from dot styling)
           const finderPositions = [
             [padding, padding, finderSize, finderSize], // Top-left
             [canvas.width - finderSize - padding, padding, finderSize, finderSize], // Top-right
@@ -267,78 +270,97 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
           
           // Only apply dot styling if requested
           if (options.dotStyle && options.dotStyle !== 'square') {
-            // Apply the dotStyle to the QR code modules
-            // We'll only read from the canvas once to determine which pixels are dark
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const pixelData = imageData.data;
+            // We need to completely redraw the QR code with dot styling
+            // This approach solves the partial redraw problem
             
-            // QR code is black and white, so we can use a simple threshold
-            const threshold = 128;
-            const isLightPixel = (r: number, g: number, b: number) => (r + g + b) / 3 > threshold;
+            // First, get the QR code data pattern (we need to know which modules are dark/light)
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
             
-            // Define dot characteristics based on the module size
-            const dotSize = moduleEstimate * 0.85; // Slightly smaller than a module
-            
-            // Check if the point is inside any finder pattern box
-            const isInFinderArea = (x: number, y: number) => {
-              return finderPositions.some(([fx, fy, fw, fh]) => 
-                x >= fx && x <= fx + fw && y >= fy && y <= fy + fh
-              );
-            };
-            
-            // Draw the QR code with the selected dot style, but don't touch finder areas
-            for (let y = 0; y < canvas.height; y += moduleEstimate) {
-              for (let x = 0; x < canvas.width; x += moduleEstimate) {
-                // Skip if in a finder pattern area
-                if (isInFinderArea(x, y)) continue;
-                
-                // Sample the center of the module
-                const sampleX = Math.floor(x + moduleEstimate / 2);
-                const sampleY = Math.floor(y + moduleEstimate / 2);
-                
-                // Skip if out of bounds
-                if (sampleX >= canvas.width || sampleY >= canvas.height) continue;
-                
-                // Get pixel color at the sample point
-                const pixelIndex = (sampleY * canvas.width + sampleX) * 4;
-                const r = pixelData[pixelIndex];
-                const g = pixelData[pixelIndex + 1];
-                const b = pixelData[pixelIndex + 2];
-                
-                // If it's a dark pixel (part of the QR code)
-                if (!isLightPixel(r, g, b)) {
-                  // Clear the module area first
-                  ctx.fillStyle = options.backgroundColor || '#FFFFFF';
-                  ctx.fillRect(x, y, moduleEstimate, moduleEstimate);
+            if (!tempCtx) {
+              // If we can't get a context, skip dot styling
+              console.warn('Could not get 2D context for dot styling');
+            } else {
+              tempCanvas.width = canvas.width;
+              tempCanvas.height = canvas.height;
+              
+              // Draw the QR code onto the temp canvas
+              tempCtx.drawImage(currentQrImage, 0, 0);
+              
+              // Get the pixel data to detect the QR code pattern
+              const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+              const pixelData = imageData.data;
+              
+              // Now clear our main canvas and redraw the background
+              ctx.fillStyle = options.backgroundColor || '#FFFFFF';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              
+              // QR code is black and white, so we can use a simple threshold
+              const threshold = 128;
+              const isLightPixel = (r: number, g: number, b: number) => (r + g + b) / 3 > threshold;
+              
+              // Define dot characteristics based on the module size
+              const dotSize = moduleEstimate * 0.85; // Slightly smaller than a module
+              
+              // Check if the point is inside any finder pattern box
+              const isInFinderArea = (x: number, y: number) => {
+                return finderPositions.some(([fx, fy, fw, fh]) => 
+                  x >= fx && x <= fx + fw && y >= fy && y <= fy + fh
+                );
+              };
+              
+              // Draw the QR code with the selected dot style
+              // Use a fixed grid spacing for consistency
+              const gridSize = Math.floor(canvas.width / 25); // This creates a reasonable grid
+              
+              for (let y = 0; y < canvas.height; y += gridSize) {
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                  // Skip if in a finder pattern area
+                  if (isInFinderArea(x, y)) continue;
                   
-                  // Draw the module with the selected style
-                  ctx.fillStyle = options.foregroundColor || '#000000';
+                  // Sample the center of each grid cell
+                  const sampleX = Math.floor(x + gridSize / 2);
+                  const sampleY = Math.floor(y + gridSize / 2);
                   
-                  if (options.dotStyle === 'dots') {
-                    // Circular dots - make these quite large to ensure good scanning
-                    const radius = moduleEstimate * 0.45; // Almost as big as the module
-                    ctx.beginPath();
-                    ctx.arc(
-                      x + moduleEstimate / 2,
-                      y + moduleEstimate / 2,
-                      radius,
-                      0,
-                      Math.PI * 2
-                    );
-                    ctx.fill();
-                  } else if (options.dotStyle === 'rounded') {
-                    // Rounded square modules - keep these large for good scanning
-                    const cornerRadius = moduleEstimate / 5;
-                    ctx.beginPath();
-                    roundRect(
-                      ctx,
-                      x + moduleEstimate * 0.1,
-                      y + moduleEstimate * 0.1,
-                      moduleEstimate * 0.8,
-                      moduleEstimate * 0.8,
-                      cornerRadius
-                    );
-                    ctx.fill();
+                  // Skip if out of bounds
+                  if (sampleX >= canvas.width || sampleY >= canvas.height) continue;
+                  
+                  // Get pixel color at the sample point
+                  const pixelIndex = (sampleY * canvas.width + sampleX) * 4;
+                  const r = pixelData[pixelIndex];
+                  const g = pixelData[pixelIndex + 1];
+                  const b = pixelData[pixelIndex + 2];
+                  
+                  // If it's a dark pixel (part of the QR code)
+                  if (!isLightPixel(r, g, b)) {
+                    ctx.fillStyle = options.foregroundColor || '#000000';
+                    
+                    if (options.dotStyle === 'dots') {
+                      // Circular dots - ensure they're big enough for scanning
+                      const radius = gridSize * 0.45;
+                      ctx.beginPath();
+                      ctx.arc(
+                        x + gridSize / 2,
+                        y + gridSize / 2,
+                        radius,
+                        0,
+                        Math.PI * 2
+                      );
+                      ctx.fill();
+                    } else if (options.dotStyle === 'rounded') {
+                      // Rounded square modules
+                      const cornerRadius = gridSize / 5;
+                      ctx.beginPath();
+                      roundRect(
+                        ctx,
+                        x + gridSize * 0.1,
+                        y + gridSize * 0.1,
+                        gridSize * 0.8,
+                        gridSize * 0.8,
+                        cornerRadius
+                      );
+                      ctx.fill();
+                    }
                   }
                 }
               }
@@ -387,11 +409,12 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
               return;
             }
             
-            // Frame calculations
-            const frameWidth = Math.min(Math.max(options.frameWidth || 5, 1), 10);
-            const frameSize = Math.floor(qrImage.width * (frameWidth / 100));
+            // Frame calculations - use a fixed, scannable size regardless of user settings
+            // This ensures QR codes remain readable even with frames
+            const frameWidthPercent = 3; // Fixed at 3% of QR size for better scanning reliability
+            const frameSize = Math.floor(qrImage.width * (frameWidthPercent / 100));
             
-            // Make canvas larger to accommodate the frame
+            // Make canvas slightly larger to accommodate the frame
             canvas.width = qrImage.width + (frameSize * 2);
             canvas.height = qrImage.height + (frameSize * 2);
             
