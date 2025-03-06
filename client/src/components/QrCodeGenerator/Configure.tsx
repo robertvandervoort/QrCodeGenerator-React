@@ -318,6 +318,120 @@ const Configure = ({
               </div>
             </div>
             
+            {/* QR Code Style Options */}
+            <div className="space-y-4 border-t border-gray-200 pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-700">QR Code Style Options</Label>
+              </div>
+              
+              {/* Style Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Corner Style */}
+                <div className="space-y-2">
+                  <Label htmlFor="corner-style" className="text-sm font-medium text-gray-700">Corner Style</Label>
+                  <Select
+                    value={qrOptions.cornerStyle || 'square'}
+                    onValueChange={(value) => handleQrOptionChange('cornerStyle', value)}
+                  >
+                    <SelectTrigger id="corner-style">
+                      <SelectValue placeholder="Select corner style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="square">Square (Default)</SelectItem>
+                      <SelectItem value="rounded">Rounded</SelectItem>
+                      <SelectItem value="extraRounded">Extra Rounded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Dot Style */}
+                <div className="space-y-2">
+                  <Label htmlFor="dot-style" className="text-sm font-medium text-gray-700">Dot Style</Label>
+                  <Select
+                    value={qrOptions.dotStyle || 'square'}
+                    onValueChange={(value) => handleQrOptionChange('dotStyle', value)}
+                  >
+                    <SelectTrigger id="dot-style">
+                      <SelectValue placeholder="Select dot style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="square">Square (Default)</SelectItem>
+                      <SelectItem value="dots">Circular</SelectItem>
+                      <SelectItem value="rounded">Rounded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Frame Style */}
+                <div className="space-y-2">
+                  <Label htmlFor="frame-style" className="text-sm font-medium text-gray-700">Frame Style</Label>
+                  <Select
+                    value={qrOptions.frameStyle || 'none'}
+                    onValueChange={(value) => handleQrOptionChange('frameStyle', value)}
+                  >
+                    <SelectTrigger id="frame-style">
+                      <SelectValue placeholder="Select frame style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Frame</SelectItem>
+                      <SelectItem value="simple">Simple Frame</SelectItem>
+                      <SelectItem value="double">Double Frame</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Frame Color */}
+                {qrOptions.frameStyle && qrOptions.frameStyle !== 'none' && (
+                  <div className="space-y-2">
+                    <ColorPicker 
+                      color={qrOptions.frameColor || "#000000"} 
+                      onChange={(color) => handleQrOptionChange('frameColor', color)} 
+                      label="Frame Color"
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {/* Sliders for sizes/radius */}
+              <div className="grid grid-cols-1 gap-6">
+                {/* Corner Radius Slider (only show when corners are rounded) */}
+                {qrOptions.cornerStyle && qrOptions.cornerStyle !== 'square' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="corner-radius" className="text-sm font-medium text-gray-700">Corner Radius: {qrOptions.cornerRadius || 10}%</Label>
+                    </div>
+                    <Slider
+                      id="corner-radius"
+                      min={1}
+                      max={50}
+                      step={1}
+                      value={[qrOptions.cornerRadius || 10]}
+                      onValueChange={(values) => handleQrOptionChange('cornerRadius', values[0])}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+                
+                {/* Frame Width Slider (only show when frame is enabled) */}
+                {qrOptions.frameStyle && qrOptions.frameStyle !== 'none' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="frame-width" className="text-sm font-medium text-gray-700">Frame Width: {qrOptions.frameWidth || 5}%</Label>
+                    </div>
+                    <Slider
+                      id="frame-width"
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[qrOptions.frameWidth || 5]}
+                      onValueChange={(values) => handleQrOptionChange('frameWidth', values[0])}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
             {/* Center Image options */}
             <div className="space-y-4 border-t border-gray-200 pt-4 mt-4">
               <div className="flex items-center space-x-2">

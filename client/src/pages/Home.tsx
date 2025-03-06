@@ -30,6 +30,14 @@ export type QrCodeOptions = {
   centerImage?: string;
   centerImageSize?: number;
   centerImageIsClipArt?: boolean;
+  
+  // QR Code Style Options
+  cornerStyle?: 'square' | 'rounded' | 'extraRounded';
+  cornerRadius?: number;
+  dotStyle?: 'square' | 'dots' | 'rounded';
+  frameStyle?: 'none' | 'simple' | 'double';
+  frameColor?: string;
+  frameWidth?: number;
 };
 
 export type GeneratedQrCode = {
