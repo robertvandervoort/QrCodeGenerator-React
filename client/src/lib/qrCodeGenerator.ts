@@ -315,8 +315,8 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
                   ctx.fillStyle = options.foregroundColor || '#000000';
                   
                   if (options.dotStyle === 'dots') {
-                    // Circular dots
-                    const radius = dotSize / 2;
+                    // Circular dots - make these quite large to ensure good scanning
+                    const radius = moduleEstimate * 0.45; // Almost as big as the module
                     ctx.beginPath();
                     ctx.arc(
                       x + moduleEstimate / 2,
@@ -327,15 +327,15 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
                     );
                     ctx.fill();
                   } else if (options.dotStyle === 'rounded') {
-                    // Rounded square modules
-                    const cornerRadius = moduleEstimate / 4;
+                    // Rounded square modules - keep these large for good scanning
+                    const cornerRadius = moduleEstimate / 5;
                     ctx.beginPath();
                     roundRect(
                       ctx,
-                      x + (moduleEstimate - dotSize) / 2,
-                      y + (moduleEstimate - dotSize) / 2,
-                      dotSize,
-                      dotSize,
+                      x + moduleEstimate * 0.1,
+                      y + moduleEstimate * 0.1,
+                      moduleEstimate * 0.8,
+                      moduleEstimate * 0.8,
                       cornerRadius
                     );
                     ctx.fill();
@@ -347,7 +347,20 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
           
           // Apply corner styling to the finder patterns if requested
           if (options.cornerStyle && options.cornerStyle !== 'square') {
-            // Style each finder pattern
+            // First completely clear each finder pattern area to remove the original pattern
+            ctx.fillStyle = options.backgroundColor || '#FFFFFF';
+            for (const [x, y, w, h] of finderPositions) {
+              // Clear a slightly larger area to ensure complete coverage
+              const padding = moduleEstimate / 4;
+              ctx.fillRect(
+                x - padding,
+                y - padding,
+                w + padding * 2,
+                h + padding * 2
+              );
+            }
+            
+            // Now draw our custom styled finder patterns
             for (const [x, y, w, h] of finderPositions) {
               applyCornerStyleToFinder(ctx, x, y, w, options);
             }
@@ -485,10 +498,12 @@ const applyCornerStyleToFinder = (
   ctx.save();
   
   const cornerRadius = options.cornerRadius || 10;
-  const radiusPercent = Math.min(Math.max(cornerRadius, 1), 50) / 100;
+  // Ensure reasonable radius limits for scanner compatibility
+  const radiusPercent = Math.min(Math.max(cornerRadius, 1), 30) / 100;
   const cornerRadiusPixels = radiusPercent * size;
   
-  // Define the finder pattern structure (all measurements in relation to finder size)
+  // Finder patterns must maintain proper proportions for scanning
+  // Standard finder pattern is 7x7 modules with proper spacing
   const outerBorderWidth = size / 7; // 1/7 of finder size
   const innerSquareSize = size - (outerBorderWidth * 2); // 5/7 of finder size
   const innerBorderWidth = outerBorderWidth; // Same as outer border width
@@ -498,41 +513,39 @@ const applyCornerStyleToFinder = (
   ctx.fillStyle = options.backgroundColor || '#FFFFFF';
   ctx.fillRect(x, y, size, size);
   
-  // Draw outer square with rounded corners
+  // Calculate actual radius to use based on styling option
+  let actualOuterRadius = 0;
+  let actualInnerRadius = 0;
+  
+  if (options.cornerStyle === 'rounded') {
+    actualOuterRadius = cornerRadiusPixels;
+    actualInnerRadius = cornerRadiusPixels * 0.7;
+  } else if (options.cornerStyle === 'extraRounded') {
+    // For extra rounded, limit the radius to make sure it's still recognizable as a finder pattern
+    actualOuterRadius = Math.min(cornerRadiusPixels * 1.5, size * 0.3);
+    actualInnerRadius = Math.min(cornerRadiusPixels, size * 0.2);
+  }
+  
+  // Draw outer square with rounded corners (limit the radius to ensure scanner compatibility)
   ctx.fillStyle = options.foregroundColor || '#000000';
   ctx.beginPath();
-  if (options.cornerStyle === 'rounded') {
-    roundRect(ctx, x, y, size, size, cornerRadiusPixels);
-  } else if (options.cornerStyle === 'extraRounded') {
-    roundRect(ctx, x, y, size, size, cornerRadiusPixels * 1.5);
-  }
+  roundRect(ctx, x, y, size, size, actualOuterRadius);
   ctx.fill();
   
   // Draw inner white square with rounded corners
   ctx.fillStyle = options.backgroundColor || '#FFFFFF';
   ctx.beginPath();
-  if (options.cornerStyle === 'rounded') {
-    roundRect(
-      ctx,
-      x + outerBorderWidth,
-      y + outerBorderWidth,
-      innerSquareSize,
-      innerSquareSize,
-      cornerRadiusPixels * 0.7
-    );
-  } else if (options.cornerStyle === 'extraRounded') {
-    roundRect(
-      ctx,
-      x + outerBorderWidth,
-      y + outerBorderWidth,
-      innerSquareSize,
-      innerSquareSize,
-      cornerRadiusPixels * 1.0
-    );
-  }
+  roundRect(
+    ctx,
+    x + outerBorderWidth,
+    y + outerBorderWidth,
+    innerSquareSize,
+    innerSquareSize,
+    actualInnerRadius
+  );
   ctx.fill();
   
-  // Draw center black square (no rounding)
+  // Draw center black square (keep it square for better recognition)
   ctx.fillStyle = options.foregroundColor || '#000000';
   ctx.fillRect(
     x + outerBorderWidth + innerBorderWidth,
@@ -549,12 +562,31 @@ const applyCornerStyleToFinder = (
  * Generate a QR code as a data URL
  */
 export const generateQrCode = async (text: string, options: QrCodeOptions, displayText?: string): Promise<string> => {
-  // When using center images, increase error correction level to 'H' (high)
+  // Determine error correction level based on styling options
+  // - Level L (Low) = 7% error correction
+  // - Level M (Medium) = 15% error correction
+  // - Level Q (Quartile) = 25% error correction
+  // - Level H (High) = 30% error correction
+  
+  // Use higher error correction when any styling or center image is used
+  const needsHighErrorCorrection = 
+    options.centerImage || 
+    options.cornerStyle !== 'square' ||
+    options.dotStyle !== 'square';
+  
+  // Use highest error correction when multiple styling features are used together
+  const needsHighestErrorCorrection = 
+    (options.cornerStyle !== 'square' && options.dotStyle !== 'square') ||
+    (options.cornerStyle !== 'square' && options.centerImage) ||
+    (options.dotStyle !== 'square' && options.centerImage);
+  
+  const errorCorrectionLevel = needsHighestErrorCorrection ? 'H' : (needsHighErrorCorrection ? 'Q' : 'M');
+  
   const opts: QRCode.QRCodeToDataURLOptions = {
     width: options.size,
     margin: options.margin,
     type: options.format as 'image/png' | 'image/jpeg' | 'image/webp',
-    errorCorrectionLevel: options.centerImage ? 'H' : 'M', // Use high error correction when center image is used
+    errorCorrectionLevel: errorCorrectionLevel,
     color: {
       dark: options.foregroundColor || '#000000',
       light: options.backgroundColor || '#FFFFFF'
