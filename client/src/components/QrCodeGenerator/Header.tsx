@@ -16,7 +16,7 @@ const Header = ({ debugMode, setDebugMode }: HeaderProps) => {
         <div className="flex justify-between items-center py-4">
           <h1 className="text-xl font-semibold text-gray-800 flex items-center">
             <QrCode className="mr-2 text-primary h-6 w-6" />
-            QR Code Generator
+            QR code all the things!
           </h1>
           <div>
             <button 
