@@ -422,58 +422,106 @@ const applyQrCodeStyling = (qrCodeDataUrl: string, options: QrCodeOptions): Prom
                 );
               }
               
-              // Draw custom styled finder patterns
+              // Draw custom styled finder patterns with a much more conservative approach
               for (const [x, y, w, h] of finderPositions) {
                 const cornerStyle = options.cornerStyle || 'square';
-                const radiusPercent = Math.min(Math.max(options.cornerRadius || 10, 1), 30) / 100;
                 
-                // Calculate radius based on finder pattern size
-                const radius = w * radiusPercent;
+                // CRITICAL: Use a much smaller radius value for better scanability
+                // We're dividing the finder pattern into 7x7 modules (standard QR code specification)
+                const moduleSize = w / 7; // Size of a single module in the finder pattern
                 
-                // Draw position markers with rounded corners
+                // Conservative radius calculation - makes radius relative to a single module
+                // Use at most 25% of a module for radius (much smaller than before)
+                const baseRadiusInModules = Math.min(Math.max(options.cornerRadius || 10, 1), 25) / 100;
+                const radius = moduleSize * baseRadiusInModules;
+                
+                // Use a more precise drawing of the finder pattern
+                // Finder patterns are structured as:
+                // - 7x7 outer square
+                // - 5x5 inner white square 
+                // - 3x3 center black square
                 newCtx.fillStyle = options.foregroundColor || '#000000';
                 
-                // Outer square with rounded corners
+                // 1. Draw the 7x7 outer square (dark)
+                // Only round the outer corners of the finder pattern
                 newCtx.beginPath();
                 if (cornerStyle === 'rounded') {
-                  roundRect(newCtx, x, y, w, h, radius);
+                  // Draw the outer square with small rounded corners only on the outer corners
+                  // Find the corners that face outward from the QR code
+                  if (x === padding && y === padding) {
+                    // Top-left finder: round the top-left corner only
+                    newCtx.moveTo(x + radius, y);
+                    newCtx.lineTo(x + w, y);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x, y + h);
+                    newCtx.lineTo(x, y + radius);
+                    newCtx.quadraticCurveTo(x, y, x + radius, y);
+                  } else if (x === canvas.width - finderSize - padding && y === padding) {
+                    // Top-right finder: round the top-right corner only
+                    newCtx.moveTo(x, y);
+                    newCtx.lineTo(x + w - radius, y);
+                    newCtx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x, y + h);
+                  } else {
+                    // Bottom-left finder: round the bottom-left corner only
+                    newCtx.moveTo(x, y);
+                    newCtx.lineTo(x + w, y);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x + radius, y + h);
+                    newCtx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                    newCtx.lineTo(x, y);
+                  }
                 } else if (cornerStyle === 'extraRounded') {
-                  roundRect(newCtx, x, y, w, h, radius * 1.5);
+                  // For extra rounded, follow the same approach but with a bit more rounding
+                  // We're still keeping it reasonably small for scanability
+                  const extraRadius = radius * 1.5;
+                  
+                  if (x === padding && y === padding) {
+                    // Top-left finder: round the top-left corner only (extra rounded)
+                    newCtx.moveTo(x + extraRadius, y);
+                    newCtx.lineTo(x + w, y);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x, y + h);
+                    newCtx.lineTo(x, y + extraRadius);
+                    newCtx.quadraticCurveTo(x, y, x + extraRadius, y);
+                  } else if (x === canvas.width - finderSize - padding && y === padding) {
+                    // Top-right finder: round the top-right corner only (extra rounded)
+                    newCtx.moveTo(x, y);
+                    newCtx.lineTo(x + w - extraRadius, y);
+                    newCtx.quadraticCurveTo(x + w, y, x + w, y + extraRadius);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x, y + h);
+                  } else {
+                    // Bottom-left finder: round the bottom-left corner only (extra rounded)
+                    newCtx.moveTo(x, y);
+                    newCtx.lineTo(x + w, y);
+                    newCtx.lineTo(x + w, y + h);
+                    newCtx.lineTo(x + extraRadius, y + h);
+                    newCtx.quadraticCurveTo(x, y + h, x, y + h - extraRadius);
+                    newCtx.lineTo(x, y);
+                  }
                 } else {
+                  // Square corners (default)
                   newCtx.rect(x, y, w, h);
                 }
+                newCtx.closePath();
                 newCtx.fill();
                 
-                // Inner white square (smaller)
-                const innerMargin = w / 7;
+                // 2. Draw the 5x5 inner white square 
+                const innerMargin = moduleSize;
                 const innerSize = w - (innerMargin * 2);
                 newCtx.fillStyle = options.backgroundColor || '#FFFFFF';
-                newCtx.beginPath();
-                if (cornerStyle === 'rounded') {
-                  roundRect(
-                    newCtx, 
-                    x + innerMargin, 
-                    y + innerMargin, 
-                    innerSize, 
-                    innerSize, 
-                    radius * 0.7
-                  );
-                } else if (cornerStyle === 'extraRounded') {
-                  roundRect(
-                    newCtx, 
-                    x + innerMargin, 
-                    y + innerMargin, 
-                    innerSize, 
-                    innerSize, 
-                    radius
-                  );
-                } else {
-                  newCtx.rect(x + innerMargin, y + innerMargin, innerSize, innerSize);
-                }
-                newCtx.fill();
+                // Inner squares are always square (no rounding) for better scanability
+                newCtx.fillRect(
+                  x + innerMargin, 
+                  y + innerMargin, 
+                  innerSize, 
+                  innerSize
+                );
                 
-                // Center black square (smallest)
-                const centerMargin = innerMargin * 2;
+                // 3. Draw the 3x3 center black square
+                const centerMargin = moduleSize * 2;
                 const centerSize = w - (centerMargin * 2);
                 newCtx.fillStyle = options.foregroundColor || '#000000';
                 newCtx.fillRect(
@@ -617,65 +665,86 @@ const applyCornerStyleToFinder = (
   x: number, 
   y: number, 
   size: number, 
-  options: QrCodeOptions
+  options: QrCodeOptions,
+  position: 'top-left' | 'top-right' | 'bottom-left' = 'top-left' // Position to determine which corner to round
 ) => {
   // Save current context state
   ctx.save();
   
-  const cornerRadius = options.cornerRadius || 10;
-  // Ensure reasonable radius limits for scanner compatibility
-  const radiusPercent = Math.min(Math.max(cornerRadius, 1), 30) / 100;
-  const cornerRadiusPixels = radiusPercent * size;
+  // Module size (1/7 of finder pattern size, standard QR code specification)
+  const moduleSize = size / 7;
   
-  // Finder patterns must maintain proper proportions for scanning
-  // Standard finder pattern is 7x7 modules with proper spacing
-  const outerBorderWidth = size / 7; // 1/7 of finder size
+  // Use a MUCH more conservative approach for radius
+  // Round only the outer corner of each finder pattern
+  // Maximum radius is now 30% of a module (not the whole finder pattern)
+  const baseRadiusPercent = Math.min(Math.max(options.cornerRadius || 10, 1), 30) / 100;
+  const radius = moduleSize * baseRadiusPercent; // Radius in pixels (based on a single module, not the whole finder)
+  
+  // Standard finder pattern dimensions
+  const outerBorderWidth = moduleSize; // 1/7 of finder size
   const innerSquareSize = size - (outerBorderWidth * 2); // 5/7 of finder size
-  const innerBorderWidth = outerBorderWidth; // Same as outer border width
-  const centerSize = innerSquareSize - (innerBorderWidth * 2); // 3/7 of finder size
+  const centerSize = innerSquareSize - (outerBorderWidth * 2); // 3/7 of finder size
   
-  // Fill the finder area with background color first
+  // Fill finder area with background color first
   ctx.fillStyle = options.backgroundColor || '#FFFFFF';
   ctx.fillRect(x, y, size, size);
   
-  // Calculate actual radius to use based on styling option
-  let actualOuterRadius = 0;
-  let actualInnerRadius = 0;
-  
-  if (options.cornerStyle === 'rounded') {
-    actualOuterRadius = cornerRadiusPixels;
-    actualInnerRadius = cornerRadiusPixels * 0.7;
-  } else if (options.cornerStyle === 'extraRounded') {
-    // For extra rounded, limit the radius to make sure it's still recognizable as a finder pattern
-    actualOuterRadius = Math.min(cornerRadiusPixels * 1.5, size * 0.3);
-    actualInnerRadius = Math.min(cornerRadiusPixels, size * 0.2);
-  }
-  
-  // Draw outer square with rounded corners (limit the radius to ensure scanner compatibility)
+  // Draw the 7x7 outer square (only round the outer corner)
   ctx.fillStyle = options.foregroundColor || '#000000';
   ctx.beginPath();
-  roundRect(ctx, x, y, size, size, actualOuterRadius);
+  
+  if (options.cornerStyle === 'rounded' || options.cornerStyle === 'extraRounded') {
+    // Adjust radius for extra rounded style
+    const actualRadius = options.cornerStyle === 'extraRounded' ? radius * 1.5 : radius;
+    
+    // Determine which corner to round based on position
+    if (position === 'top-left') {
+      // Round only top-left corner
+      ctx.moveTo(x + actualRadius, y);
+      ctx.lineTo(x + size, y);
+      ctx.lineTo(x + size, y + size);
+      ctx.lineTo(x, y + size);
+      ctx.lineTo(x, y + actualRadius);
+      ctx.quadraticCurveTo(x, y, x + actualRadius, y);
+    } else if (position === 'top-right') {
+      // Round only top-right corner
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size - actualRadius, y);
+      ctx.quadraticCurveTo(x + size, y, x + size, y + actualRadius);
+      ctx.lineTo(x + size, y + size);
+      ctx.lineTo(x, y + size);
+      ctx.lineTo(x, y);
+    } else { // bottom-left
+      // Round only bottom-left corner
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + size, y);
+      ctx.lineTo(x + size, y + size);
+      ctx.lineTo(x + actualRadius, y + size);
+      ctx.quadraticCurveTo(x, y + size, x, y + size - actualRadius);
+      ctx.lineTo(x, y);
+    }
+  } else {
+    // Default square style
+    ctx.rect(x, y, size, size);
+  }
+  ctx.closePath();
   ctx.fill();
   
-  // Draw inner white square with rounded corners
+  // Draw 5x5 inner white square (always square for better scanability)
   ctx.fillStyle = options.backgroundColor || '#FFFFFF';
-  ctx.beginPath();
-  roundRect(
-    ctx,
-    x + outerBorderWidth,
-    y + outerBorderWidth,
-    innerSquareSize,
-    innerSquareSize,
-    actualInnerRadius
+  ctx.fillRect(
+    x + outerBorderWidth, 
+    y + outerBorderWidth, 
+    innerSquareSize, 
+    innerSquareSize
   );
-  ctx.fill();
   
-  // Draw center black square (keep it square for better recognition)
+  // Draw 3x3 center black square (always square)
   ctx.fillStyle = options.foregroundColor || '#000000';
   ctx.fillRect(
-    x + outerBorderWidth + innerBorderWidth,
-    y + outerBorderWidth + innerBorderWidth,
-    centerSize,
+    x + outerBorderWidth * 2, 
+    y + outerBorderWidth * 2, 
+    centerSize, 
     centerSize
   );
   
