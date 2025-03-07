@@ -7,15 +7,21 @@ import { QrCodeOptions } from '@/pages/Home';
 export const generateStyledQrCode = async (text: string, options: QrCodeOptions): Promise<string> => {
   try {
     // Map our dot style options to the library's options
-    const dotType = 
-      options.dotStyle === 'dots' ? 'dots' : 
-      options.dotStyle === 'rounded' ? 'rounded' : 'square';
+    let dotType: string = 'square'; // default
+    if (options.dotStyle === 'dots') {
+      dotType = 'dots';
+    } else if (options.dotStyle === 'rounded') {
+      dotType = 'rounded';
+    }
     
     // Map our corner style options to the library's options
-    const cornerType = 
-      options.cornerStyle === 'extraRounded' ? 'extra-rounded' :
-      options.cornerStyle === 'rounded' ? 'square' : 'square';
+    // The library only supports 'dot', 'square', or 'extra-rounded'
+    let cornerType: string = 'square'; // default
+    if (options.cornerStyle === 'extraRounded') {
+      cornerType = 'extra-rounded';
+    }
     
+    // Create the QR code with styling options
     const qrCode = new QRCodeStyling({
       width: options.size,
       height: options.size,
@@ -31,18 +37,18 @@ export const generateStyledQrCode = async (text: string, options: QrCodeOptions)
         margin: 0,
       },
       dotsOptions: {
-        type: dotType,
+        type: dotType as any,
         color: options.foregroundColor || '#000000',
       },
       backgroundOptions: {
         color: options.backgroundColor || '#FFFFFF',
       },
       cornersSquareOptions: {
-        type: cornerType,
+        type: cornerType as any,
         color: options.foregroundColor || '#000000',
       },
       cornersDotOptions: {
-        type: 'square',
+        type: 'dot',
         color: options.foregroundColor || '#000000',
       }
     });
