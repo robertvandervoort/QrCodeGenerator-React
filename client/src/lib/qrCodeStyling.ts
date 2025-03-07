@@ -21,6 +21,9 @@ export const generateStyledQrCode = async (text: string, options: QrCodeOptions)
     let cornerType: string = 'square'; // default
     if (options.cornerStyle === 'extraRounded') {
       cornerType = 'extra-rounded';
+    } else if (options.cornerStyle === 'rounded') {
+      // Use extra-rounded for our rounded option since the library's options are limited
+      cornerType = 'extra-rounded';
     }
     
     // Create the QR code with styling options
@@ -51,7 +54,8 @@ export const generateStyledQrCode = async (text: string, options: QrCodeOptions)
         color: options.foregroundColor || '#000000',
       },
       cornersDotOptions: {
-        type: 'dot',
+        // Remove the dots in the corner squares by using the same type as corner squares
+        type: cornerType as any,
         color: options.foregroundColor || '#000000',
       }
     });
@@ -168,7 +172,8 @@ export const addFrameToQrCode = (qrCodeDataUrl: string, options: QrCodeOptions):
           }
           
           // Frame calculations
-          const frameWidthPercent = 3; // Fixed for scanning reliability
+          // Different frame sizes for simple vs double frames
+          let frameWidthPercent = options.frameStyle === 'simple' ? 5 : 3; // Thicker for simple, thinner for double
           const frameSize = Math.floor(qrImage.width * (frameWidthPercent / 100));
           
           // Make canvas larger to fit the frame
@@ -183,13 +188,13 @@ export const addFrameToQrCode = (qrCodeDataUrl: string, options: QrCodeOptions):
           ctx.fillStyle = options.frameColor || options.foregroundColor || '#000000';
           
           if (options.frameStyle === 'simple') {
-            // Simple frame
+            // Simple frame - just a single border
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = options.backgroundColor || '#FFFFFF';
             ctx.fillRect(frameSize, frameSize, qrImage.width, qrImage.height);
           } else if (options.frameStyle === 'double') {
-            // Double frame
-            const innerFrameSize = frameSize / 2;
+            const innerFrameSize = Math.floor(frameSize * 0.4); // Smaller inner frame
+            const gapSize = Math.floor(frameSize * 0.6); // Gap between frames
             
             // Outer frame
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -197,26 +202,26 @@ export const addFrameToQrCode = (qrCodeDataUrl: string, options: QrCodeOptions):
             // Gap between frames
             ctx.fillStyle = options.backgroundColor || '#FFFFFF';
             ctx.fillRect(
-              innerFrameSize, 
-              innerFrameSize, 
-              canvas.width - (innerFrameSize * 2), 
-              canvas.height - (innerFrameSize * 2)
+              gapSize, 
+              gapSize, 
+              canvas.width - (gapSize * 2), 
+              canvas.height - (gapSize * 2)
             );
             
             // Inner frame
             ctx.fillStyle = options.frameColor || options.foregroundColor || '#000000';
             ctx.fillRect(
-              frameSize, 
-              frameSize, 
-              canvas.width - (frameSize * 2), 
-              canvas.height - (frameSize * 2)
+              gapSize + innerFrameSize, 
+              gapSize + innerFrameSize, 
+              canvas.width - ((gapSize + innerFrameSize) * 2), 
+              canvas.height - ((gapSize + innerFrameSize) * 2)
             );
             
             // Inner content area
             ctx.fillStyle = options.backgroundColor || '#FFFFFF';
             ctx.fillRect(
-              frameSize + innerFrameSize, 
-              frameSize + innerFrameSize, 
+              (gapSize + innerFrameSize * 2), 
+              (gapSize + innerFrameSize * 2), 
               qrImage.width, 
               qrImage.height
             );
