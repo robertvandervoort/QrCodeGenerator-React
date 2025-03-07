@@ -1,5 +1,6 @@
 import { QrCodeOptions } from '@/pages/Home';
-import { generateQrCode as qrCodeGenerator } from '@/lib/qrCodeGenerator';
+// Import the new QR code styling library
+import { generateQrCode as qrCodeGenerator } from '@/lib/qrCodeStyling';
 
 // This is a wrapper around our enhanced QR code generator library
 export const generateQrCode = async (
@@ -11,7 +12,9 @@ export const generateQrCode = async (
       throw new Error('URL is required');
     }
     
-    // Use our enhanced QR code generator that supports center images 
+    console.log(`Generating ${url.substring(0, 20)}... QR code with options:`, options);
+    
+    // Use our new styled QR code generator that supports multiple styling options
     // and maintains consistent styling across the application
     return await qrCodeGenerator(url, options, url);
   } catch (error) {
