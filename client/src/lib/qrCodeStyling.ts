@@ -6,6 +6,8 @@ import { QrCodeOptions } from '@/pages/Home';
  */
 export const generateStyledQrCode = async (text: string, options: QrCodeOptions): Promise<string> => {
   try {
+    console.log('Generating QR code:', options);
+    
     // Map our dot style options to the library's options
     let dotType: string = 'square'; // default
     if (options.dotStyle === 'dots') {
@@ -29,11 +31,12 @@ export const generateStyledQrCode = async (text: string, options: QrCodeOptions)
       data: text,
       margin: options.margin || 4,
       qrOptions: {
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: 'M', // Lower the error correction level to reduce density
+        typeNumber: 0, // Auto-detect the best type number
       },
       imageOptions: {
         hideBackgroundDots: true,
-        imageSize: 0.3,
+        imageSize: options.centerImage ? (options.centerImageSize || 20) / 100 : 0,
         margin: 0,
       },
       dotsOptions: {
