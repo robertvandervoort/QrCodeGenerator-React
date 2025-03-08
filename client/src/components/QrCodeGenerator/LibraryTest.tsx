@@ -108,7 +108,6 @@ const LibraryTest = () => {
                     <SelectContent>
                       <SelectItem value="square">Square</SelectItem>
                       <SelectItem value="rounded">Rounded</SelectItem>
-                      <SelectItem value="extraRounded">Extra Rounded</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -141,8 +140,9 @@ const LibraryTest = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="simple">Simple</SelectItem>
-                      <SelectItem value="double">Double</SelectItem>
+                      <SelectItem value="thin">Thin</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="thick">Thick</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

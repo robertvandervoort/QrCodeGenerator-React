@@ -11,12 +11,10 @@ export interface QrCodeOptions {
   centerImageIsClipArt?: boolean; // Whether the center image is clip art
   
   // QR Code Style Options
-  cornerStyle?: 'square' | 'rounded' | 'extraRounded'; // Style of the QR code corners
-  cornerRadius?: number; // Radius for rounded corners (1-50 as percentage)
+  cornerStyle?: 'square' | 'rounded'; // Style of the QR code corners (square or rounded)
   dotStyle?: 'square' | 'dots' | 'rounded'; // Style of the QR code modules/dots
-  frameStyle?: 'none' | 'simple' | 'double'; // Frame around the QR code
+  frameStyle?: 'none' | 'thin' | 'medium' | 'thick'; // Frame thickness
   frameColor?: string; // Color of the frame
-  frameWidth?: number; // Width of the frame (1-10)
 }
 
 export interface GeneratedQrCode {
