@@ -20,31 +20,11 @@ export type FileData = {
   currentSheet?: string;
 };
 
-export type QrCodeOptions = {
-  size: number;
-  margin: number;
-  format: string;
-  includeText: boolean;
-  foregroundColor?: string;
-  backgroundColor?: string;
-  centerImage?: string;
-  centerImageSize?: number;
-  centerImageIsClipArt?: boolean;
-  
-  // QR Code Style Options
-  cornerStyle?: 'square' | 'rounded' | 'extraRounded';
-  cornerRadius?: number;
-  dotStyle?: 'square' | 'dots' | 'rounded';
-  frameStyle?: 'none' | 'simple' | 'double';
-  frameColor?: string;
-  frameWidth?: number;
-};
+// Import from shared types to ensure consistency
+import { QrCodeOptions, GeneratedQrCode } from '../../shared/types';
 
-export type GeneratedQrCode = {
-  url: string;
-  filename: string;
-  dataUrl: string;
-};
+// Add any additional types needed just for this component
+export type { QrCodeOptions, GeneratedQrCode };
 
 export type DebugLog = {
   type: 'file' | 'url' | 'config' | 'generation' | 'sheet' | 'download' | 'app';

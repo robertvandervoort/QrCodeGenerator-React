@@ -1,5 +1,5 @@
 import QRCodeStyling from '@solana/qr-code-styling';
-import { QrCodeOptions } from '@/pages/Home';
+import type { QrCodeOptions } from '../../shared/types';
 
 /**
  * Generate a QR code as a data URL using QRCodeStyling library
