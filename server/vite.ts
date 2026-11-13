@@ -1,8 +1,9 @@
-import express, { type Express } from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
+import { sendIndexHtml } from "./htmlMeta";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { type Server } from "http";
@@ -62,7 +63,7 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      sendIndexHtml(req, res, page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
@@ -79,10 +80,28 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  const indexPath = path.resolve(distPath, "index.html");
+  const sendIndex = (req: Request, res: Response, next: NextFunction) => {
+    fs.promises.readFile(indexPath, "utf-8")
+      .then((template) => {
+        sendIndexHtml(req, res, template);
+      })
+      .catch(next);
+  };
+
+  app.get(["/", "/index.html"], sendIndex);
+  app.use(express.static(distPath, { index: false }));
 
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  app.use("*", (req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+    if (req.path.startsWith("/api")) {
+      next();
+      return;
+    }
+    sendIndex(req, res, next);
   });
 }

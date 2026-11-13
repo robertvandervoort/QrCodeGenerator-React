@@ -6,6 +6,7 @@ import QrPreviewModal from "./QrPreviewModal";
 import { Loader2, Eye, Download, DownloadCloud, ChevronLeft, ChevronRight } from "lucide-react";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
+import { trackCta } from "@/lib/rum";
 
 interface GenerateProps {
   previewData: any[];
@@ -159,6 +160,7 @@ const Generate = ({
       
       setGeneratedQrCodes(codes);
       setIsGenerating(false);
+      if (codes.length > 0) trackCta("qr-generate", codes.length);
       logDebug('generation', `Completed generating ${codes.length} QR codes`);
     };
     
@@ -189,6 +191,7 @@ const Generate = ({
       saveAs(qrCode.dataUrl, qrCode.filename);
       logDebug('download', `Downloaded ${qrOptions.format.toUpperCase()} file: ${qrCode.filename}`);
     }
+    trackCta("qr-download");
   };
 
   const downloadAllQrCodes = async () => {
@@ -232,6 +235,7 @@ const Generate = ({
         ? `qr-codes-${currentSheet.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.zip` 
         : "qr-codes.zip";
       saveAs(content, zipFilename);
+      trackCta("qr-download", generatedQrCodes.length);
       logDebug('download', `Downloaded ZIP file (${zipFilename}) with ${generatedQrCodes.length} QR codes`);
     });
   };
@@ -423,6 +427,7 @@ const Generate = ({
                 // For PNG and JPEG
                 saveAs(currentPreviewQr.dataUrl, currentPreviewQr.filename);
               }
+              trackCta("qr-download");
               logDebug('download', `Downloaded QR code from preview: ${currentPreviewQr.filename}`);
             }
           }}
