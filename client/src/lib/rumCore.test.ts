@@ -7,7 +7,6 @@ import {
   externalHostname,
   foregroundDuration,
   getOrCreateSessionId,
-  isDoNotTrack,
   isSessionSampled,
   loadAttribution,
   normalizeRoute,
@@ -26,11 +25,7 @@ function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage {
   };
 }
 
-test("do not track and sample rate", () => {
-  assert.equal(isDoNotTrack({ doNotTrack: "1" }), true);
-  assert.equal(isDoNotTrack({ doNotTrack: "yes" }), true);
-  assert.equal(isDoNotTrack({ doNotTrack: "0" }), false);
-  assert.equal(isDoNotTrack({ doNotTrack: null, globalPrivacyControl: true }), true);
+test("sample rate", () => {
   assert.equal(readSampleRate(undefined), 1);
   assert.equal(readSampleRate("0"), 0);
   assert.equal(readSampleRate("0.25"), 0.25);

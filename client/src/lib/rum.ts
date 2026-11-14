@@ -7,7 +7,6 @@ import {
   encodeOtlp,
   foregroundDuration,
   getOrCreateSessionId,
-  isDoNotTrack,
   isSessionSampled,
   loadAttribution,
   normalizeRoute,
@@ -74,16 +73,6 @@ function browserStorage(): KeyValueStorage {
 function metaContent(name: string): string {
   const element = document.querySelector(`meta[name="${name}"]`);
   return element?.getAttribute("content")?.trim() || "";
-}
-
-function readDnt(): boolean {
-  const nav = navigator as Navigator & { msDoNotTrack?: string; globalPrivacyControl?: boolean };
-  const win = window as Window & { doNotTrack?: string };
-  const signal = nav.doNotTrack || win.doNotTrack || nav.msDoNotTrack || null;
-  return isDoNotTrack({
-    doNotTrack: signal,
-    globalPrivacyControl: nav.globalPrivacyControl === true,
-  });
 }
 
 function visibilityEntries(): VisibilitySlice[] {
@@ -220,7 +209,6 @@ export function initRum(): void {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
   try {
-    if (readDnt()) return;
     const storage = browserStorage();
     const rate = readSampleRate(import.meta.env.VITE_RUM_SAMPLE_RATE);
     if (!isSessionSampled(rate, Math.random(), storage)) return;

@@ -37,15 +37,6 @@ const SESSION_KEY = "qr.rum.session.id";
 const ATTRIBUTION_KEY = "qr.rum.attribution";
 const SAMPLE_KEY = "qr.rum.sampled";
 
-export function isDoNotTrack(signals: {
-  doNotTrack?: string | null;
-  globalPrivacyControl?: boolean;
-}): boolean {
-  const dnt = signals.doNotTrack;
-  if (dnt === "1" || dnt === "yes") return true;
-  return signals.globalPrivacyControl === true;
-}
-
 export function readSampleRate(raw: unknown): number {
   if (raw === undefined || raw === null || raw === "") return 1;
   const value = typeof raw === "number" ? raw : Number(raw);
