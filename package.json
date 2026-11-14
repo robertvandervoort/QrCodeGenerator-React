@@ -8,6 +8,7 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
+    "test": "tsx --test server/accessLog.test.ts server/htmlMeta.test.ts server/otelProxy.test.ts client/src/lib/rumCore.test.ts client/src/lib/fetchLaterPolyfill.test.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
@@ -78,6 +79,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.0",
+    "web-vitals": "^5.3.0",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
     "zod": "^3.23.8",

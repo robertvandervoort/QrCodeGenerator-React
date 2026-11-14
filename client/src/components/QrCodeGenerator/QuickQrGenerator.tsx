@@ -16,6 +16,7 @@ import {
   Image, X
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { trackCta } from "@/lib/rum";
 import { Textarea } from "@/components/ui/textarea";
 // Define QrCodeOptions directly here to match the shared type
 interface QrCodeOptions {
@@ -675,6 +676,7 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
       console.log(`Generating ${qrCodeType} QR code:`, { content: qrContent, ...options });
       const qrCodeDataUrl = await generateQrCode(qrContent, options, displayContent);
       setGeneratedQrCode(qrCodeDataUrl);
+      trackCta("qr-generate");
     } catch (error) {
       console.error("Error generating QR code:", error);
       toast({
@@ -695,6 +697,7 @@ const QuickQrGenerator = ({ showBatchOptions }: QuickQrGeneratorProps) => {
 
   const downloadQrCode = () => {
     if (!generatedQrCode) return;
+    trackCta("qr-download");
 
     const link = document.createElement('a');
     // Create a meaningful filename based on QR code type
